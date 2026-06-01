@@ -6,16 +6,39 @@ medical-management-system/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── App.jsx
-│   │   │   ├── Provider.jsx
-│   │   │   └── store.jsx
-│   │   ├── routes/
-│   │   │   ├── index.jsx
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   └── RoleRoute.jsx
-│   │   ├── layouts/
-│   │   │   ├── DashboardLayout.jsx
-│   │   │   ├── AuthLayout.jsx
-│   │   │   └── PublicLayout.jsx
+│   │   │   ├── main.jsx
+│   │   │   ├── providers/
+│   │	│   │   ├── QueryProvider.jsx
+│   │	│   │   ├── ReduxProvider.jsx
+│   │	│   │   ├── AuthProvider.jsx
+│   │	│   │   ├── ThemProvider.jsx
+│   │	│   │   ├── NotificationProvider.jsx
+│   │   │   │   └── AppProvider.jsx
+│   │   │   ├── router/
+│   │	│   │   ├── Index.jsx
+│   │	│   │   ├── AppRouter.jsx
+│   │	│   │   ├── ProtectedRoute.jsx
+│   │	│   │   ├── PublicRoute.jsx
+│   │	│   │   ├── RoleRoute.jsx
+│   │   │   │   └── RoleConfig.jsx
+│   │   │   ├── layouts/
+│   │   │   ├── guards/
+│   │   │   ├── store/
+│   │   │   ├── context/
+│   │   │   ├── config/
+│   │   │   ├── constants/
+│   │   │   ├── hooks/
+│   │   │   ├── services/
+│   │   │   ├── styles/
+│   │	│   │   ├── global.css
+│   │	│   │   ├── variable.css
+│   │	│   │   ├── typograph.css
+│   │	│   │   ├── animations.css
+│   │	│   │   ├── animations.css
+│   │   │   │   └── utilities.css
+│   │   │   ├── middleware/
+│   │   │   ├── errors/
+│   │   │   └── bootstrap/
 │   │   ├── pages/
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── LoginPage.jsx
@@ -23,8 +46,104 @@ medical-management-system/
 │   │   │   ├── ProfilePage.jsx
 │   │   │   ├── SettingPage.jsx
 │   │   │   └── NotFoundPage.jsx
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── store/
+│   │   ├── utils/
+│   │   ├── components/
+│   │   │
 │   │   ├── features/
 │   │   │   ├── auth/
+│   │	│   │   ├── api/
+│   │	│   │   │   ├── auth.api.js
+│   │	│   │   │   ├── auth.queries.js
+│   │	│   │   │   ├── auth.mutations.js
+│   │	│   │   │   ├── auth.key.js
+│   │	│   │   │   ├── auth.adapters.js
+│   │	│   │   │   ├── auth.validators.js
+│   │   │   │   │   └── auth.schema.js
+│   │	│   │   ├── pages/
+│   │	│   │   │   ├── LoginPage.jsx
+│   │	│   │   │   ├── RegisterPage.jsx
+│   │	│   │   │   ├── ForgotPasswordPage.jsx
+│   │	│   │   │   ├── ResetPasswordPage.js
+│   │	│   │   │   ├── VerifyEmailPage.jsx
+│   │	│   │   │   ├── ChangePasswordPage.jsx
+│   │	│   │   │   ├── ProfilePage.jsx
+│   │   │   │   │   └── UnauthorizedPage.jsx
+│   │	│   │   ├── components/
+│   │	│   │   │   ├── forms/
+│   │	│   │   │   │   ├── LoginForm.jsx
+│   │	│   │   │   │   ├── RegisterForm.jsx
+│   │	│   │   │   │   ├── ForgotPasswordForm.jsx
+│   │	│   │   │   │   ├── ResetPasswordForm.jsx
+│   │	│   │   │   │   ├── ChangePasswordForm.jsx
+│   │   │   │   │   │   └── ProfileForm.jsx
+│   │	│   │   │   ├── cards/
+│   │	│   │   │   │   ├── LoginCard.jsx
+│   │	│   │   │   │   ├── RegisterCard.jsx
+│   │   │   │   │   │   └── ProfileCard.jsx
+│   │	│   │   │   ├── security/
+│   │	│   │   │   │   ├── PasswordStrength.jsx
+│   │	│   │   │   │   ├── SessionInfo.jsx
+│   │	│   │   │   │   ├── TwoFactorInfo.jsx
+│   │   │   │   │   │   └── LoginHistory.jsx
+│   │	│   │   │   ├── shared/
+│   │	│   │   │   │   ├── AuthHeader.jsx
+│   │	│   │   │   │   ├── AuthFooter.jsx
+│   │	│   │   │   │   ├── AuthLogo.jsx
+│   │	│   │   │   │   ├── AuthDivider.jsx
+│   │	│   │   │   │   ├── AuthSocialButton.jsx
+│   │   │   │   │   │   └── AuthErrorAlert.jsx
+│   │   │   │   │   └── skeletons/
+│   │	│   │   │       ├── LoginSkeleton.jsx
+│   │   │   │   │       └── ProfileSkeleton.jsx
+│   │	│   │   ├── hooks/
+│   │	│   │   │   ├── useAuth.js
+│   │	│   │   │   ├── useLogin.js
+│   │	│   │   │   ├── useLogout.js
+│   │	│   │   │   ├── useRegister.js
+│   │	│   │   │   ├── useForgotPassword.js
+│   │	│   │   │   ├── useResetPassword.js
+│   │	│   │   │   ├── useProfile.js
+│   │   │   │   │   └── usePermission.js
+│   │	│   │   ├── store/
+│   │	│   │   │   ├── authSlice.js
+│   │	│   │   │   ├── authSelectors.js
+│   │   │   │   │   └── authActions.js
+│   │	│   │   ├── utils/
+│   │	│   │   │   ├── authStorage.js
+│   │	│   │   │   ├── tokenUtils.js
+│   │	│   │   │   ├── permissionUtils.js
+│   │	│   │   │   ├── roleUtils.js
+│   │   │   │   │   └── authHelpers.js
+│   │	│   │   ├── constants/
+│   │	│   │   │   ├── roles.js
+│   │	│   │   │   ├── permission.js
+│   │	│   │   │   ├── authRoutes.js
+│   │   │   │   │   └── authMessage.js
+│   │	│   │   ├── schemas/
+│   │	│   │   │   ├── loginSchema.js
+│   │	│   │   │   ├── registerSchema.js
+│   │	│   │   │   ├── forgotPasswordSchema.js
+│   │	│   │   │   ├── resetPasswordSchema.js
+│   │   │   │   │   └── profileSchema.js
+│   │	│   │   ├── guards/
+│   │	│   │   │   ├── AuthGuard.jsx
+│   │	│   │   │   ├── GuestGuard.jsx
+│   │   │   │   │   └── PermissionGuard.jsx
+│   │	│   │   ├── services/
+│   │	│   │   │   ├── auth.service.js
+│   │	│   │   │   ├── seesion.service.js
+│   │   │   │   │   └── permission.service.js
+│   │	│   │   ├── context/
+│   │   │   │   │   └── authContext.jsx
+│   │	│   │   ├── types/
+│   │	│   │   │   ├── auth.types.js
+│   │	│   │   │   ├── user.types.js
+│   │   │   │   │   └── permission.types.js
+│   │   │   │   └── index.js
+│   │   │   │ 
 │   │   │   ├── dashboard/
 │   │	│   │   ├── api/
 │   │	│   │   │   ├── dashboard.api.js
@@ -1833,12 +1952,6 @@ medical-management-system/
 │   │	│       ├── config/
 │   │   │       └── index.js
 │   │   │   
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── services/
-│   │   ├── store/
-│   │   ├── utils/
-│   │   ├── constants/
 │   │   └── assets/
 │   │
 │   └── public/
