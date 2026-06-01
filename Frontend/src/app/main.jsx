@@ -1,20 +1,21 @@
 //src/app/main.jsx 
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
+import App from './App';
+import AppProvider from './context/AppProvider';
 
-/* Global styles */
-import "../assets/styles/global.css";
+import './styles/global.css';
+import './styles/variables.css';
+import './styles/typography.css';
+import './styles/animations.css';
+import './styles/utilities.css';
 
-/* Optional: Error Boundary (recommended for production) */
-import ErrorBoundary from "../components/feedback/ErrorBoundary";
-
-ReactDOM.createRoot(document.getElementById("root")).rendary(
+ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <ErrorBoundary>
+        <AppProvider>
             <App />
-        </ErrorBoundary>
+        </AppProvider>
     </React.StrictMode>
 );
 
