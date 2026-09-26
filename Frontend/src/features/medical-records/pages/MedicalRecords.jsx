@@ -1,63 +1,101 @@
-/* ***************************************************************** */
-/* File: #src/features/medical-records/pages/CreateMedicalRecord.jsx */ 
-/* ***************************************************************** */
+/* ************************************************************ */
+/* File: #src/features/medical-records/pages/MedicalRecords.jsx */
+/* ************************************************************ */
 
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import MedicalRecordForm from "../components/MedicalRecordForm";
-import useCreateMedicalRecord from "../hooks/useCreateMedicalRecord";
+import MedicalRecordTable from "../components/MedicalRecordTable";
+import MedicalRecordFilters from "../components/MedicalRecordFilters";
 
-const CreateMedicalRecord = () => {
+import useMedicalRecords from "../hooks/useMedicalRecords";
+
+import {
+  DEFAULT_MEDICAL_RECORD_FILTERS,
+} from "../constants/medicalRecordConstants";
+
+const MedicalRecords = () => {
   const navigate = useNavigate();
 
+  const [filters, setFilters] =
+    useState(
+      DEFAULT_MEDICAL_RECORD_FILTERS
+    );
+
+  const params = useMemo(
+    () => ({
+      ...filters,
+    }),
+    [filters]
+  );
+
   const {
-    createMedicalRecord,
+    records,
     loading,
     error,
-  } = useCreateMedicalRecord();
+    refetch,
+  } = useMedicalRecords(params);
 
-  const handleSubmit = async (data) => {
-    try {
-      const result =
-        await createMedicalRecord(data);
+  const resetFilters = () => {
+    setFilters(
+      DEFAULT_MEDICAL_RECORD_FILTERS
+    );
+  };
 
-      const record = result?.data ?? result;
-
-      if (record?.id) {
-        navigate(
-          `/medical-records/${record.id}`
-        );
-      } else {
-        navigate("/medical-records");
-      }
-    } catch {
-      // Error is exposed through the hook.
-    }
+  const handleView = (record) => {
+    navigate(
+      `/medical-records/${record.id}`
+    );
   };
 
   return (
-    <section className="create-medical-record-page">
+    <section className="medical-records-page">
       <header>
-        <h1>Create Medical Record</h1>
+        <h1>Medical Records</h1>
 
         <p>
-          Create a new clinical record for a
-          patient.
+          Manage patient medical records and
+          clinical information.
         </p>
+
+        <button
+          type="button"
+          onClick={() =>
+            navigate(
+              "/medical-records/create"
+            )
+          }
+        >
+          Create Medical Record
+        </button>
       </header>
+
+      <MedicalRecordFilters
+        filters={filters}
+        onChange={setFilters}
+        onReset={resetFilters}
+      />
 
       {error && (
         <div className="error-state">
-          {error}
+          <p>{error}</p>
+
+          <button
+            type="button"
+            onClick={refetch}
+          >
+            Try Again
+          </button>
         </div>
       )}
 
-      <MedicalRecordForm
-        onSubmit={handleSubmit}
+      <MedicalRecordTable
+        records={records}
         loading={loading}
+        onView={handleView}
       />
     </section>
   );
 };
 
-export default CreateMedicalRecord;
+export default MedicalRecords;
