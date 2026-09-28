@@ -11,6 +11,25 @@ const statusStyles = {
 	Cancelled: 'bg-rose-50 text-rose-700',
 };
 
+function ActionButton({ children, className = '', ...props }) {
+	return (
+		<button
+			{...props}
+			className={`rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${className}`}
+		>
+			{children}
+		</button>
+	);
+}
+
+function StatusBadge({ status }) {
+	return (
+		<span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[status] || 'bg-slate-100 text-slate-700'}`}>
+			{status}
+		</span>
+	);
+}
+
 export default function AppointmentOverview({ appointments = [], onViewAll, onAppointmentSelect }) {
 	const [query, setQuery] = useState('');
 	const [statusFilter, setStatusFilter] = useState('All statuses');
@@ -31,9 +50,9 @@ export default function AppointmentOverview({ appointments = [], onViewAll, onAp
 					<h2 id="appointment-overview-title" className="text-lg font-semibold text-slate-900">Appointment overview</h2>
 					<p className="mt-1 text-sm text-slate-500">Manage and track your latest appointments</p>
 				</div>
-				<button type="button" onClick={onViewAll} className="self-start rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:self-auto">
+				<ActionButton type="button" onClick={onViewAll} className="self-start sm:self-auto">
 					View all appointments <span aria-hidden="true">→</span>
-				</button>
+				</ActionButton>
 			</div>
 
 			<div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:px-6">
@@ -62,8 +81,8 @@ export default function AppointmentOverview({ appointments = [], onViewAll, onAp
 								<td className="whitespace-nowrap px-6 py-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700">{appointment.initials || appointment.patient?.split(' ').map((part) => part[0]).join('').slice(0, 2)}</div><div><p className="font-medium text-slate-900">{appointment.patient}</p><p className="mt-0.5 text-xs text-slate-500">{appointment.id}</p></div></div></td>
 								<td className="whitespace-nowrap px-6 py-4"><p className="font-medium text-slate-800">{appointment.doctor}</p><p className="mt-0.5 text-xs text-slate-500">{appointment.department}</p></td>
 								<td className="whitespace-nowrap px-6 py-4"><p className="text-slate-800">{appointment.date}</p><p className="mt-0.5 text-xs text-slate-500">{appointment.time}</p></td>
-								<td className="whitespace-nowrap px-6 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[appointment.status] || 'bg-slate-100 text-slate-700'}`}>{appointment.status}</span></td>
-								<td className="px-6 py-4 text-right"><button type="button" onClick={() => onAppointmentSelect?.(appointment)} aria-label={`View appointment ${appointment.id}`} className="rounded-md px-2 py-1 font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500">Details</button></td>
+								<td className="whitespace-nowrap px-6 py-4"><StatusBadge status={appointment.status} /></td>
+								<td className="px-6 py-4 text-right"><button type="button" onClick={() => onAppointmentSelect?.(appointment)} aria-label={`View appointment ${appointment.id}`} className="rounded-md px-2 py-1 font-medium text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500">Details</button></td>
 							</tr>
 						))}
 						{filteredAppointments.length === 0 && <tr><td colSpan="5" className="px-6 py-10 text-center text-sm text-slate-500">{appointments.length ? 'No appointments match your search.' : 'No appointments to display.'}</td></tr>}
