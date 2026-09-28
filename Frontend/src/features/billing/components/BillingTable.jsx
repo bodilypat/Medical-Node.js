@@ -1,94 +1,105 @@
-/* ***************************************************** */
-/* #src/features/billing/components/BillingForm.jsx  */
-/* ***************************************************** */
+/* ********************************************************* */
+/* #src/features/billing/components/BillingItemTable.jsx          */
+/* ********************************************************* */
 
-import {
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
-
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 /* Constants */
-const DEFAULT_ITEM = {
-    description: "",
-    quantity: 1,
-    unitPrice: "",
-    discount: 0,
-    taxRate: 0,
+
+const DEFAULT_PAGE_SIZE = 10;
+
+const BILLING_STATUSES = {
+    draft: {
+        label: "Draft",
+        className: "status-draft",
+    },
+    pending: {
+        label: "Pending",
+        className: "status-pending",
+    },
+    unpaid: {
+        label: "Unpaid",
+        className: "status-unpaid",
+    },
+    partially_paid: {
+        label: "Partially Paid",
+        className: "status-partially-paid",
+    },
+    paid: {
+        label: "Paid",
+        className: "status-paid",
+    },
+    overdue: {
+        label: "Overdue",
+        className: "status-overdue",
+    },
+    cancelled: {
+        label: "Cancelled",
+        className: "status-cancelled",
+    },
+    refunded: {
+        label: "Refunded",
+        className: "status-refunded",
+    },
+    partially_refunded: {
+        label: "Partially Refunded",
+        className: "status-partially-refunded",
+    },
 };
-
-const DEFAULT_FORM = {
-    patientId: "",
-    doctorId: "",
-    billingDate: "",
-    dueDate: "",
-    currency: "USD",
-    paymentTerms: "due_on_receipt",
-    notes: "",
-    items: [DEFAULT_ITEM],
-};
-
-const PAYMENT_TERMS = [
-    {
-        value: "due_on_receipt",
-        label: "Due on receipt",
-    },
-    {
-        value: "7_days",
-        label: "Net 7 days",
-    },
-    {
-        value: "15_days",
-        label: "Net 15 days",
-    },
-    {
-        value: "30_days",
-        label: "Net 30 days",
-    },
-    {
-        value: "60_days",
-        label: "Net 60 days",
-    },
-];
-
-const CURRENCIES = [
-    {
-        value: "USD",
-        label: "USD — US Dollar",
-    },
-    {
-        value: "EUR",
-        label: "EUR — Euro",
-    },
-    {
-        value: "GBP",
-        label: "GBP — British Pound",
-    },
-    {
-        value: "INR",
-        label: "INR — Indian Rupee",
-    },
-];
-
-const MAX_NOTES_LENGTH = 2000;
-const MAX_ITEM_DESCRIPTION_LENGTH = 500;
 
 /* Helpers */
 
-const getPatientName = (patient) => {
-    if (!patient) {
-        return "";
+const getBillingId = (billing) =>
+    billing?.id ??
+    billing?.billingId ??
+    billing?.invoiceId;
+
+const getInvoiceNumber = (billing) =>
+    billing?.invoiceNumber ??
+    billing?.invoiceNo ??
+    billing?.number ??
+    billing?.referenceNumber ??
+    `#${getBillingId(billing) ?? "—"}`;
+
+const getPatientName = (billing) => {
+    if (billing?.patientName) {
+        return billing.patientName;
     }
 
-    if (patient.name) {
-        return patient.name;
+    if (billing?.patient?.name) {
+        return billing.patient.name;
+    }
+
+const name = [
+    billing?.patient?.firstName,
+    billing?.patient?.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return (
+        name ||
+        (billing?.patientId
+            ? `Patient #${billing.patientId}`
+            : "—")
+    );
+};
+
+const getDoctorName = (billing) => {
+    if (billing?.doctorName) {
+        return billing.doctorName;
+    }
+
+    if (billing?.doctor?.name) {
+        return billing.doctor.name;
     }
 
     const name = [
-        patient.firstName,
-        patient.lastName,
+        billing?.doctor?.firstName,
+        billing?.doctor?.lastName,
     ]
         .filter(Boolean)
         .join(" ")
@@ -96,1220 +107,1342 @@ const getPatientName = (patient) => {
 
     return (
         name ||
-        `Patient #${patient.id}`
+        (billing?.doctorId
+        ? `Doctor #${billing.doctorId}`
+        : "—")
     );
 };
 
-const getDoctorName = (doctor) => {
-    if (!doctor) {
-        return "";
-    }
+const getStatus = (billing) => {
+    const status = String(
+        billing?.status ??
+        billing?.billingStatus ??
+        billing?.paymentStatus ??
+        "draft"
+    ).toLowerCase();
 
-    if (doctor.name) {
-        return doctor.name.startsWith("Dr.")
-            ? doctor.name
-            : `Dr. ${doctor.name}`;
+    return (
+        BILLING_STATUSES[status] || {
+        label: billing?.status || "Unknown",
+        className: "status-default",
         }
+    );
+};
 
-    const name = [
-        doctor.firstName,
-        doctor.lastName,
-    ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+const getAmount = (billing) => {
+    const value =
+        billing?.total ??
+        billing?.grandTotal ??
+        billing?.amount ??
+        billing?.totalAmount ??
+        0;
 
-    if (!name) {
-        return `Doctor #${doctor.id}`;
-    }
-
-    return name.startsWith("Dr.")
-        ? name
-        : `Dr. ${name}`;
-    };
-
-    const toNumber = (
-        value,
-        fallback = 0
-    ) => {
     const number = Number(value);
 
     return Number.isFinite(number)
         ? number
-        : fallback;
-    };
+        : 0;
+};
 
-    const roundMoney = (value) =>
-    Math.round(
-        (toNumber(value) + Number.EPSILON) *
-        100
-    ) / 100;
+const getCurrency = (billing) =>
+    billing?.currency ?? "USD";
 
-    const formatMoney = (
-        amount,
-        currency = "USD"
-    ) => {
+const formatCurrency = (
+    amount,
+    currency = "USD"
+) => {
     try {
         return new Intl.NumberFormat(
+            undefined,
+            {
+                style: "currency",
+                currency,
+            }
+        ).format(Number(amount) || 0);
+        } catch {
+            return `${currency} ${(
+            Number(amount) || 0
+            ).toFixed(2)}`;
+        }
+};
+
+const formatDate = (value) => {
+    if (!value) {
+        return "—";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(
         undefined,
         {
-            style: "currency",
-            currency,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
         }
-    ).format(toNumber(amount));
-    } catch {
-        return `${currency} ${toNumber(
-            amount
-        ).toFixed(2)}`;
-    }
+    ).format(date);
 };
 
-const createItem = () => ({
-    ...DEFAULT_ITEM,
-});
+const getDateValue = (billing) =>
+    billing?.billingDate ??
+    billing?.invoiceDate ??
+    billing?.createdAt;
 
-const normalizeItem = (item = {}) => ({
-    description:
-        item.description ??
-        item.name ??
-        "",
-    quantity:
-        item.quantity ??
-        1,
-    unitPrice:
-        item.unitPrice ??
-        item.price ??
-        "",
-    discount:
-        item.discount ??
-        0,
-    taxRate:
-        item.taxRate ??
-        item.tax ??
-        0,
-});
+const getDueDate = (billing) =>
+    billing?.dueDate ??
+    billing?.paymentDueDate;
 
-const normalizeItems = (items) => {
+const isOverdue = (billing) => {
+    const status = String(
+        billing?.status ??
+        billing?.billingStatus ??
+        billing?.paymentStatus ??
+        ""
+    ).toLowerCase();
+
     if (
-        !Array.isArray(items) ||
-        items.length === 0
+        [
+        "paid",
+        "cancelled",
+        "refunded",
+        ].includes(status)
     ) {
-        return [createItem()];
+        return false;
     }
 
-    return items.map(normalizeItem);
-};
+    const dueDate = getDueDate(
+        billing
+    );
 
-const mapBillingToForm = (
-    billing
-) => {
-    if (!billing) {
-    return {
-            ...DEFAULT_FORM,
-            items: [createItem()],
-        };
+    if (!dueDate) {
+        return false;
     }
 
-    return {
-        patientId:
-            billing.patientId ??
-            billing.patient?.id ??
-            "",
-        doctorId:
-            billing.doctorId ??
-            billing.doctor?.id ??
-            "",
-        billingDate:
-            billing.billingDate ??
-            billing.invoiceDate ??
-            "",
-        dueDate:
-            billing.dueDate ??
-            "",
-        currency:
-            billing.currency ??
-            "USD",
-        paymentTerms:
-            billing.paymentTerms ??
-            "due_on_receipt",
-        notes:
-            billing.notes ??
-            "",
-        items: normalizeItems(
-            billing.items ??
-            billing.lineItems ??
-            billing.invoiceItems ??
-            []
-        ),
-    };
+    const date = new Date(dueDate);
+
+    if (Number.isNaN(date.getTime())) {
+        return false;
+    }
+
+    return (
+        date.getTime() <
+        new Date().setHours(
+            0,
+            0,
+            0,
+            0
+        )
+    );
 };
 
-const calculateItemTotals = (
-    item
-) => {
-    const quantity = Math.max(
-        0,
-        toNumber(item.quantity)
-    );
+/* Component  */
 
-    const unitPrice = Math.max(
-        0,
-        toNumber(item.unitPrice)
-    );
-
-    const discount = Math.max(
-        0,
-        toNumber(item.discount)
-    );
-
-    const taxRate = Math.max(
-        0,
-        toNumber(item.taxRate)
-    );
-
-    const gross = roundMoney(
-        quantity * unitPrice
-    );
-
-    const discountAmount = roundMoney(
-        Math.min(discount, gross)
-    );
-
-    const taxableAmount = roundMoney(
-        gross - discountAmount
-    );
-
-    const taxAmount = roundMoney(
-        taxableAmount *
-        (taxRate / 100)
-    );
-
-    const total = roundMoney(
-        taxableAmount + taxAmount
-    );
-
-    return {
-        gross,
-        discountAmount,
-        taxableAmount,
-        taxAmount,
-        total,
-    };
-};
-
-/* Component */
-const BillingForm = ({
-    billing = null,
-    patients = [],
-    doctors = [],
-    onSubmit,
-    onCancel,
+const BillingTable = ({
+    billings = [],
     loading = false,
-    mode = "create",
+    selectedIds = [],
+    onSelectionChange,
+    onView,
+    onEdit,
+    onDelete,
+    onPayment,
+    onRefund,
+    onRowClick,
+    emptyMessage = "No billing records found.",
+    page = 1,
+    pageSize = DEFAULT_PAGE_SIZE,
+    total = null,
+    totalPages = null,
+    onPageChange,
+    onPageSizeChange,
+    showPagination = true,
+    showSelection = true,
+    showActions = true,
+    showDoctor = true,
 }) => {
     const navigate = useNavigate();
 
-    const isEditMode =
-        mode === "edit" ||
-        Boolean(billing);
+    const [
+        internalSelectedIds,
+        setInternalSelectedIds,
+    ] = useState([]);
 
-    const [formData, setFormData] =
-        useState(DEFAULT_FORM);
-
-    const [errors, setErrors] =
-        useState({});
-
-    const [submitError, setSubmitError] =
-        useState("");
-
-  /* Initialize */
-useEffect(() => {
-    setFormData(
-        mapBillingToForm(billing)
-    );
-    setErrors({});
-    setSubmitError("");
-  }, [billing]);
-
-  /* Totals */
-const totals = useMemo(() => {
-    return formData.items.reduce(
-        (summary, item) => {
-            const itemTotals =
-            calculateItemTotals(
-                item
-            );
-
-            return {
-            subtotal: roundMoney(
-                summary.subtotal +
-                itemTotals.gross
-            ),
-            discount: roundMoney(
-                summary.discount +
-                itemTotals.discountAmount
-            ),
-            tax: roundMoney(
-                summary.tax +
-                itemTotals.taxAmount
-            ),
-            total: roundMoney(
-                summary.total +
-                itemTotals.total
-            ),
-        };
-        },
-        {
-            subtotal: 0,
-            discount: 0,
-            tax: 0,
-            total: 0,
-        }
-    );
-  }, [formData.items]);
-
-  /* Change handlers */
-const clearFieldError = (
-    field
-) => {
-    if (!errors[field]) {
-        return;
-    }
-
-    setErrors((previous) => {
-        const next = {
-        ...previous,
-    };
-
-    delete next[field];
-
-        return next;
+    const [
+        sortConfig,
+        setSortConfig,
+    ] = useState({
+        key: "date",
+        direction: "desc",
     });
+
+  /* Selection */
+
+const controlledSelection =
+    Array.isArray(selectedIds);
+
+ const activeSelectedIds =
+    controlledSelection
+      ? selectedIds
+      : internalSelectedIds;
+
+ const updateSelection = (
+    nextSelection
+  ) => {
+    if (onSelectionChange) {
+      onSelectionChange(
+        nextSelection
+      );
+    } else {
+      setInternalSelectedIds(
+        nextSelection
+      );
+    }
   };
 
-    const handleChange = (
-        event
-    ) => {
-        const {
-            name,
-            value,
-        } = event.target;
+const isSelected = (billing) => {
+    const id = getBillingId(
+      billing
+    );
 
-        setFormData(
-        (previous) => ({
-            ...previous,
-            [name]: value,
-        })
-        );
-
-        clearFieldError(name);
-
-        if (submitError) {
-        setSubmitError("");
-    }
+    return activeSelectedIds.some(
+      (selectedId) =>
+        String(selectedId) ===
+        String(id)
+    );
 };
 
-  /* Item handlers                                            */
-const handleItemChange = (
-    index,
-    field,
-    value
-) => {
-    setFormData(
-        (previous) => ({
-            ...previous,
-            items: previous.items.map(
-            (item, itemIndex) =>
-                itemIndex === index
-                ? {
-                    ...item,
-                    [field]: value,
-                }
-                : item
-            ),
-        })
-        );
+const handleSelectRow = (
+    billing
+  ) => {
+    const id = getBillingId(
+      billing
+    );
 
-        setErrors((previous) => {
-        const next = {
-            ...previous,
-        };
-
-        delete next.items;
-
-        Object.keys(next).forEach(
-            (key) => {
-            if (
-                key.startsWith(
-                    `items.${index}.`
-                )
-                ) {
-                    delete next[key];
-                }
-            }
-        );
-
-        return next;
-    });
-
-    if (submitError) {
-        setSubmitError("");
+    if (!id) {
+      return;
     }
+
+    const nextSelection =
+      isSelected(billing)
+        ? activeSelectedIds.filter(
+            (selectedId) =>
+              String(selectedId) !==
+              String(id)
+          )
+        : [
+            ...activeSelectedIds,
+            id,
+          ];
+
+    updateSelection(
+      nextSelection
+    );
 };
 
-const handleAddItem = () => {
-    setFormData(
+  
+  /* Sorting */
+  
+  const handleSort = (key) => {
+    setSortConfig(
       (previous) => ({
-        ...previous,
-        items: [
-          ...previous.items,
-          createItem(),
-        ],
+        key,
+        direction:
+          previous.key === key &&
+          previous.direction === "asc"
+            ? "desc"
+            : "asc",
       })
     );
   };
 
-  const handleRemoveItem = (
-    index
-  ) => {
-    setFormData(
-        (previous) => {
-            if (
-            previous.items.length <= 1
-            ) {
-            return previous;
-        }
+  const sortedBillings =
+    useMemo(() => {
+      const items = [
+        ...billings,
+      ];
 
-        return {
-            ...previous,
-            items:
-            previous.items.filter(
-                    (_, itemIndex) => itemIndex !== index
-                ),
-            };
+      items.sort(
+        (a, b) => {
+          const {
+            key,
+            direction,
+          } = sortConfig;
+
+          let aValue;
+          let bValue;
+
+          switch (key) {
+            case "invoice":
+              aValue =
+                getInvoiceNumber(a);
+              bValue =
+                getInvoiceNumber(b);
+              break;
+
+            case "patient":
+              aValue =
+                getPatientName(a);
+              bValue =
+                getPatientName(b);
+              break;
+
+            case "doctor":
+              aValue =
+                getDoctorName(a);
+              bValue =
+                getDoctorName(b);
+              break;
+
+            case "amount":
+              aValue =
+                getAmount(a);
+              bValue =
+                getAmount(b);
+              break;
+
+            case "status":
+              aValue =
+                getStatus(a).label;
+              bValue =
+                getStatus(b).label;
+              break;
+
+            case "dueDate":
+              aValue = getDueDate(a)
+                ? new Date(
+                    getDueDate(a)
+                  ).getTime()
+                : 0;
+
+              bValue = getDueDate(b)
+                ? new Date(
+                    getDueDate(b)
+                  ).getTime()
+                : 0;
+              break;
+
+            case "date":
+            default:
+              aValue =
+                getDateValue(a)
+                  ? new Date(
+                      getDateValue(a)
+                    ).getTime()
+                  : 0;
+
+              bValue =
+                getDateValue(b)
+                  ? new Date(
+                      getDateValue(b)
+                    ).getTime()
+                  : 0;
+              break;
+          }
+
+          if (
+            typeof aValue ===
+              "number" &&
+            typeof bValue ===
+              "number"
+          ) {
+            return direction ===
+              "asc"
+              ? aValue - bValue
+              : bValue - aValue;
+          }
+
+          return direction === "asc"
+            ? String(
+                aValue
+              ).localeCompare(
+                String(bValue)
+              )
+            : String(
+                bValue
+              ).localeCompare(
+                String(aValue)
+              );
         }
+      );
+
+      return items;
+    }, [billings, sortConfig]);
+
+    /* Select all */
+ 
+  const allVisibleSelected =
+    sortedBillings.length > 0 &&
+    sortedBillings.every(
+      (billing) =>
+        isSelected(billing)
     );
 
-    setErrors((previous) => {
-        const next = {
-            ...previous,
-        };
-
-        delete next.items;
-
-        Object.keys(next).forEach(
-            (key) => {
-                if (
-                    key.startsWith(`items.${index}.`)
-                ) {
-                    delete next[key];
-                }
-            }
+  const handleSelectAll = () => {
+    if (allVisibleSelected) {
+      const visibleIds =
+        sortedBillings.map(
+          getBillingId
         );
 
-        return next;
-        });
-    };
+      updateSelection(
+        activeSelectedIds.filter(
+          (selectedId) =>
+            !visibleIds.some(
+              (id) =>
+                String(id) ===
+                String(selectedId)
+            )
+        )
+      );
 
-    /* Validation */  
-    const validate = () => {
-        const validationErrors =
-        {};
-
-        if (!formData.patientId) {
-            validationErrors.patientId =
-            "Please select a patient.";
-        }
-
-        if (
-            formData.billingDate &&
-            formData.dueDate &&
-            formData.dueDate <
-            formData.billingDate
-        ) {
-            validationErrors.dueDate =
-            "Due date cannot be before the billing date.";
-        }
-
-        if (
-            !formData.items.length
-        ) {
-            validationErrors.items =
-            "At least one billing item is required.";
-        }
-
-        formData.items.forEach(
-            (item, index) => {
-                const description =
-                    String(
-                        item.description || ""
-                    ).trim();
-
-                const quantity = toNumber(
-                    item.quantity
-                );
-
-                const unitPrice = toNumber(
-                    item.unitPrice
-                );
-
-                const discount = toNumber(
-                    item.discount
-                );
-
-                const taxRate = toNumber(
-                    item.taxRate
-                );
-
-                if (!description) {
-                    validationErrors[
-                        `items.${index}.description`
-                    ] =
-                    "Description is required.";
-                } else if (
-                    description.length >
-                    MAX_ITEM_DESCRIPTION_LENGTH
-                ) {
-                    validationErrors[
-                    `items.${index}.description`
-                ] =
-                    `Description cannot exceed ${MAX_ITEM_DESCRIPTION_LENGTH} characters.`;
-            }
-
-            if (!Number.isFinite(quantity) || quantity <= 0) {
-                validationErrors[`items.${index}.quantity`] = "Quantity must be greater than zero.";
-            }
-
-            if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-                validationErrors[`items.${index}.unitPrice`] = "Unit price cannot be negative.";
-            }
-
-            if (!Number.isFinite(discount) || discount < 0) {
-                validationErrors[`items.${index}.discount`] = "Discount cannot be negative.";
-            }
-
-            if (discount > quantity * unitPrice) {
-                validationErrors[`items.${index}.discount`] = "Discount cannot exceed the item amount.";
-            }
-
-            if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
-                validationErrors[`items.${index}.taxRate`] = "Tax rate must be between 0 and 100.";
-            }
-        }
-    );
-
-    if (formData.notes.length > MAX_NOTES_LENGTH) {
-        validationErrors.notes = `Notes cannot exceed ${MAX_NOTES_LENGTH} characters.`;
-    }
-
-    setErrors(
-        validationErrors
-    );
-
-    return (
-        Object.keys(
-            validationErrors
-        ).length === 0
-    );
-};
-
-  /* Submit */
-const handleSubmit = async (
-    event
-) => {
-    event.preventDefault();
-
-    setSubmitError("");
-
-    if (!validate()) {
       return;
     }
 
-    const payload = {
-        patientId:
-            formData.patientId,
+    const newIds =
+      sortedBillings
+        .map(getBillingId)
+        .filter(Boolean);
 
-        doctorId:
-            formData.doctorId || null,
+    const mergedIds = [
+      ...activeSelectedIds,
+    ];
 
-        billingDate:
-            formData.billingDate || null,
+    newIds.forEach((id) => {
+      if (
+        !mergedIds.some(
+          (existingId) =>
+            String(existingId) ===
+            String(id)
+        )
+      ) {
+        mergedIds.push(id);
+      }
+    });
 
-        dueDate:
-            formData.dueDate || null,
+    updateSelection(
+      mergedIds
+    );
+  };
 
-        currency:
-            formData.currency,
+    /* Actions */
+ 
+const handleView = (
+    billing
+) => {
+    if (onView) {
+        onView(billing);
+        return;
+    }
 
-        paymentTerms:
-            formData.paymentTerms,
-
-        notes:
-            formData.notes.trim(),
-
-        items: formData.items.map(
-            (item) => ({
-            description:
-                item.description.trim(),
-                    quantity: toNumber(
-                    item.quantity
-                ),
-                unitPrice: roundMoney(
-                    toNumber(
-                        item.unitPrice
-                    )
-                ),
-                discount: roundMoney(
-                    toNumber(
-                        item.discount
-                    )
-                ),
-                taxRate: toNumber(
-                    item.taxRate
-                ),
-            })
-        ),
-        subtotal: totals.subtotal,
-        discount: totals.discount,
-        tax: totals.tax,
-        total: totals.total,
-    };
-
-    try {
-        await onSubmit?.(payload);
-    } catch (error) {
-        console.error(
-        "Failed to save billing:",
-        error
+    const id = getBillingId(
+        billing
     );
 
-    setSubmitError(
-        error?.response?.data
-            ?.message ||
-            error?.message ||
-            "Unable to save the billing information. Please try again."
+    if (id) {
+        navigate(
+            `/billing/${id}`
+        );
+    }
+  };
+
+const handleEdit = (
+        billing
+) => {
+    if (onEdit) {
+        onEdit(billing);
+        return;
+    }
+
+    const id = getBillingId(
+        billing
+    );
+
+    if (id) {
+        navigate(
+            `/billing/${id}/edit`
         );
     }
 };
 
-  /* Cancel */
-const handleCancel = () => {
-    if (onCancel) {
-        onCancel();
+const handlePayment = (
+    billing
+  ) => {
+    if (onPayment) {
+        onPayment(billing);
         return;
     }
 
-    navigate("/billing");
+    const id = getBillingId(
+        billing
+    );
+
+    if (id) {
+        navigate(
+            `/billing/${id}/payment`
+        );
+    }
 };
 
-/* Render */
-    return (
-        <form
-            className="billing-form"
-            onSubmit={handleSubmit}
-            noValidate
-        >
-            
-            <div className="form-header">
-                <div>
-                    <h2>
-                        {isEditMode
-                        ? "Edit Billing"
-                        : "Create Billing"}
-                    </h2>
+const handleRowClick = (
+    event,
+    billing
+  ) => {
+    if (
+        event.target.closest(
+            "button"
+        ) ||
+        event.target.closest(
+            "input"
+        ) ||
+        event.target.closest(
+            "a"
+        )
+    ) {
+        return;
+    }
 
-                    <p>
-                        {isEditMode
-                        ? "Update the billing information and line items below."
-                        : "Enter the patient, billing, and charge information below."}
-                    </p>
+    if (onRowClick) {
+        onRowClick(billing);
+        return;
+    }
+
+    handleView(billing);
+};
+
+    /* Pagination */
+
+const calculatedTotal =
+    total !== null
+        ? total
+        : billings.length;
+
+const calculatedTotalPages =
+    totalPages !== null
+        ? totalPages
+        : Math.max(
+              1,
+            Math.ceil(
+            calculatedTotal /
+                pageSize
+            )
+        );
+
+    const firstItem =
+        calculatedTotal === 0
+        ? 0
+        : (page - 1) * pageSize + 1;
+
+    const lastItem =
+        Math.min(
+            page * pageSize,
+            calculatedTotal
+        );
+
+    const canPrevious =
+        page > 1;
+
+    const canNext =
+        page < calculatedTotalPages;
+
+    /* Sort indicator */
+
+
+const SortIndicator = ({
+    column,
+}) => {
+    if (
+        sortConfig.key !== column
+    ) {
+      return (
+        <span
+            className="sort-indicator"
+            aria-hidden="true"
+        >
+          ↕
+        </span>
+    );
+}
+
+    return (
+        <span
+            className="sort-indicator active"
+            aria-hidden="true"
+        >
+            {sortConfig.direction ===
+                "asc"
+                ? "↑"
+                : "↓"}
+      </span>
+    );
+};
+
+  /* Loading */
+
+  if (loading) {
+    return (
+        <div
+            className="billing-table-container"
+            aria-busy="true"
+        >
+            <div className="table-loading">
+                <div className="loading-spinner" />
+
+                    <span>
+                        Loading billing records...
+                    </span>
                 </div>
             </div>
+        );
+    }
 
-            {/* Error */}
-                {submitError && (
-                <div
-                    className="alert alert-danger"
-                    role="alert"
-                >
-                    {submitError}
+  /* Empty state */
+  
+    if (!sortedBillings.length) {
+        return (
+            <div className="billing-table-container">
+                <div className="empty-state">
+                    <div
+                        className="empty-state-icon"
+                        aria-hidden="true"
+                    >
+                        $
+                    </div>
+
+                    <h3>No Billing Records</h3>
+
+                    <p>{emptyMessage}</p>
                 </div>
-            )}
+            </div>
+        );
+    }
 
-            {/* Billing Information */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <h3>Billing Information</h3>
+  /* Render */
+    return (
+        <div className="billing-table-container">
+            {/* Desktop Table */}
 
-                    <p>
-                        Select the patient and
-                        provide the billing dates and
-                        payment terms.
-                    </p>
-                </div>
+            <div className="table-responsive">
+                <table className="billing-table">
+                    <thead>
+                        <tr>
+                            {showSelection && (
+                            <th className="selection-column">
+                                <input
+                                    type="checkbox"
+                                    checked={
+                                    allVisibleSelected
+                                    }
+                                    onChange={
+                                    handleSelectAll
+                                    }
+                                    aria-label="Select all billing records"
+                                />
+                            </th>
+                        )}
 
-                <div className="form-grid">
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "invoice"
+                                        )
+                                    }
+                                >
+                                    Invoice
+                                    <SortIndicator column="invoice" />
+                                </button>
+                            </th>
 
-                    {/* Patient */}
-                    <div className="form-group">
-                        <label htmlFor="patientId">
-                            Patient{" "}
-                            <span className="required">*</span>
-                        </label>
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "patient"
+                                        )
+                                    }
+                                >
+                                    Patient
+                                    <SortIndicator column="patient" />
+                                </button>
+                            </th>
 
-                        <select
-                            id="patientId"
-                            name="patientId"
-                            value={formData.patientId}
-                            onChange={handleChange}
-                            disabled={loading}
+                        {showDoctor && (
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                    handleSort(
+                                        "doctor"
+                                    )
+                                    }
+                                >
+                                    Doctor
+                                    <SortIndicator column="doctor" />
+                                </button>
+                            </th>
+                        )}
+
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "date"
+                                        )
+                                    }
+                                >
+                                    Billing Date
+                                    <SortIndicator column="date" />
+                                </button>
+                            </th>
+
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "dueDate"
+                                        )
+                                    }
+                                >
+                                    Due Date
+                                    <SortIndicator column="dueDate" />
+                                </button>
+                            </th>
+
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "amount"
+                                        )
+                                    }
+                                >
+                                    Amount
+                                    <SortIndicator column="amount" />
+                                </button>
+                            </th>
+
+                            <th>
+                                <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() =>
+                                        handleSort(
+                                        "status"
+                                        )
+                                    }
+                                >
+                                    Status
+                                    <SortIndicator column="status" />
+                                </button>
+                            </th>
+
+                            {showActions && (
+                            <th className="actions-column">
+                                Actions
+                            </th>
+                            )}
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {sortedBillings.map(
+                        (billing) => {
+                            const id =
+                            getBillingId(
+                                billing
+                            );
+
+                            const status =
+                            getStatus(
+                                billing
+                            );
+
+                            const overdue =
+                            isOverdue(
+                                billing
+                            );
+
+                        return (
+                        <tr
+                            key={id}
                             className={
-                                errors.patientId
-                                ? "input-error"
+                            isSelected(
+                                billing
+                            )
+                                ? "selected"
                                 : ""
                             }
+                            onClick={(event) =>
+                            handleRowClick(
+                                event,
+                                billing
+                            )
+                            }
                         >
-                            <option value="">Select patient</option>
-                                {patients.map(
-                                    (patient) => (
-                                    <option
-                                        key={patient.id}
-                                        value={patient.id}
-                                    >
-                                        {getPatientName(patient)}
-                                        {patient.patientNumber
-                                        ? ` — ${patient.patientNumber}`
-                                        : ""}
-                                    </option>
+                        {showSelection && (
+                            <td className="selection-column">
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected(
+                                        billing
+                                    )}
+                                    onChange={() =>
+                                        handleSelectRow(
+                                        billing
+                                        )
+                                    }
+                                    aria-label={`Select invoice ${getInvoiceNumber(
+                                        billing
+                                    )}`}
+                                />
+                            </td>
+                        )}
+
+                            <td>
+                                <button
+                                    type="button"
+                                    className="invoice-number-link"
+                                    onClick={() =>
+                                    handleView(
+                                        billing
+                                    )
+                                    }
+                                >
+                                    {getInvoiceNumber(
+                                    billing
+                                    )}
+                                </button>
+                            </td>
+
+                            <td>
+                                <div className="patient-cell">
+                                    <strong>
+                                        {getPatientName(
+                                            billing
+                                        )}
+                                    </strong>
+
+                                    {billing.patientNumber && (
+                                        <small>
+                                            {
+                                            billing.patientNumber
+                                            }
+                                        </small>
+                                    )}
+
+                                    {!billing.patientNumber &&
+                                        billing
+                                        .patient
+                                        ?.patientNumber && (
+                                        <small>
+                                            {
+                                                billing
+                                                .patient
+                                                .patientNumber
+                                            }
+                                        </small>
+                                    )}
+                                </div>
+                            </td>
+
+                            {showDoctor && (
+                            <td>
+                                {getDoctorName(
+                                    billing
+                                )}
+                            </td>
+                            )}
+
+                            <td>
+                                {formatDate(
+                                    getDateValue(
+                                    billing
                                     )
                                 )}
-                        </select>
+                            </td>
 
-                        {errors.patientId && (
-                        <span className="field-error">{errors.patientId}</span>
-                    )}
-                </div>
-
-                {/* Doctor */}
-                <div className="form-group">
-                    <label htmlFor="doctorId">Doctor</label>
-
-                    <select
-                        id="doctorId"
-                        name="doctorId"
-                        value={formData.doctorId}
-                        onChange={handleChange}
-                        disabled={loading}
-                    >
-                        <option value="">Select doctor</option>
-
-                            {doctors.map(
-                                (doctor) => (
-                                    <option
-                                        key={doctor.id}
-                                        value={doctor.id}
-                                    >
-                                        {getDoctorName(
-                                            doctor
-                                        )}
-                                            {doctor.specialization
-                                                ? ` — ${doctor.specialization}`
-                                                : ""}
-                                    </option>
-                                )
-                            )}
-                    </select>
-                </div>
-
-                {/* Billing Date */}
-                <div className="form-group">
-
-                    <label htmlFor="billingDate">Billing Date</label>
-                    <input
-                        id="billingDate"
-                        name="billingDate"
-                        type="date"
-                        value={formData.billingDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                    />
-                </div>
-
-                {/* Due Date */}
-
-                <div className="form-group">
-                    <label htmlFor="dueDate">Due Date</label>
-
-                    <input
-                        id="dueDate"
-                        name="dueDate"
-                        type="date"
-                        value={formData.dueDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                        className={
-                        errors.dueDate
-                            ? "input-error"
-                            : ""
-                            }
-                    />
-
-                    {errors.dueDate && (
-                        <span className="field-error">
-                            {errors.dueDate}
-                        </span>
-                    )}
-                </div>
-
-                {/* Currency */}
-
-                <div className="form-group">
-                    <label htmlFor="currency">Currency</label>
-
-                    <select
-                        id="currency"
-                        name="currency"
-                        value={formData.currency}
-                        onChange={handleChange}
-                        disabled={loading}
-                    >
-                        {CURRENCIES.map(
-                            (currency) => (
-                            <option
-                                key={currency.value}
-                                value={currency.value}
-                            >
-                            {currency.label}
-                            </option>
-                            )
-                        )}
-                    </select>
-                </div>
-
-                {/* Payment Terms */}
-                <div className="form-group">
-                    <label htmlFor="paymentTerms">Payment Terms</label>
-
-                    <select
-                        id="paymentTerms"
-                        name="paymentTerms"
-                        value={formData.paymentTerms}
-                        onChange={handleChange}
-                        disabled={loading}
-                    >
-                        {PAYMENT_TERMS.map(
-                            (term) => (
-                                <option
-                                    key={term.value}
-                                    value={term.value}
+                            <td>
+                                <span
+                                    className={
+                                    overdue
+                                        ? "overdue-date"
+                                        : ""
+                                    }
                                 >
-                                    {term.label}
-                                </option>
-                                )
+                                    {formatDate(
+                                    getDueDate(
+                                        billing
+                                    )
+                                    )}
+                                </span>
+
+                                {overdue && (
+                                    <small className="overdue-label">
+                                    Overdue
+                                    </small>
+                                )}
+                            </td>
+
+                            <td className="amount-cell">
+                                <strong>
+                                    {formatCurrency(
+                                    getAmount(
+                                        billing
+                                    ),
+                                    getCurrency(
+                                        billing
+                                    )
+                                    )}
+                                </strong>
+                            </td>
+
+                            <td>
+                                <span
+                                    className={`status-badge ${status.className}`}
+                                >
+                                    {status.label}
+                                </span>
+                            </td>
+
+                        {showActions && (
+                        <td className="actions-column">
+                            <div className="table-actions">
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={() =>
+                                    handleView(
+                                        billing
+                                    )
+                                    }
+                                    title="View billing"
+                                >
+                                    View
+                                </button>
+
+                            {onEdit && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={() =>
+                                        handleEdit(
+                                        billing
+                                        )
+                                    }
+                                >
+                                    Edit
+                                </button>
                             )}
+
+                            {onPayment && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() =>
+                                        handlePayment(
+                                        billing
+                                        )
+                                    }
+                                >
+                                    Payment
+                                </button>
+                            )}
+
+                            {onRefund && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-warning"
+                                    onClick={() =>
+                                        onRefund(
+                                        billing
+                                        )
+                                    }
+                                >
+                                    Refund
+                                </button>
+                            )}
+
+                            {onDelete && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() =>
+                                        onDelete(
+                                        billing
+                                        )
+                                    }
+                                >
+                                    Delete
+                                </button>
+                            )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              }
+            )}
+            </tbody>
+        </table>
+    </div>
+
+      {/* Mobile Cards */}
+
+      <div className="billing-mobile-list">
+        {sortedBillings.map(
+          (billing) => {
+            const id =
+              getBillingId(
+                billing
+              );
+
+            const status =
+              getStatus(
+                billing
+              );
+
+            const overdue =
+              isOverdue(
+                billing
+              );
+
+            return (
+              <article
+                key={id}
+                className={`billing-mobile-card ${
+                  isSelected(
+                    billing
+                  )
+                    ? "selected"
+                    : ""
+                }`}
+              >
+                <div className="billing-mobile-card-header">
+                  {showSelection && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected(
+                        billing
+                      )}
+                      onChange={() =>
+                        handleSelectRow(
+                          billing
+                        )
+                      }
+                      aria-label={`Select invoice ${getInvoiceNumber(
+                        billing
+                      )}`}
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    className="invoice-number-link"
+                    onClick={() =>
+                      handleView(
+                        billing
+                      )
+                    }
+                  >
+                    {getInvoiceNumber(
+                      billing
+                    )}
+                  </button>
+
+                  <span
+                    className={`status-badge ${status.className}`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
+
+                <div className="billing-mobile-card-body">
+                  <div className="billing-mobile-field">
+                    <span>
+                      Patient
+                    </span>
+
+                    <strong>
+                      {getPatientName(
+                        billing
+                      )}
+                    </strong>
+                  </div>
+
+                  {showDoctor && (
+                    <div className="billing-mobile-field">
+                      <span>
+                        Doctor
+                      </span>
+
+                      <strong>
+                        {getDoctorName(
+                          billing
+                        )}
+                      </strong>
+                    </div>
+                  )}
+
+                  <div className="billing-mobile-field">
+                    <span>
+                      Billing Date
+                    </span>
+
+                    <strong>
+                      {formatDate(
+                        getDateValue(
+                          billing
+                        )
+                      )}
+                    </strong>
+                  </div>
+
+                  <div className="billing-mobile-field">
+                    <span>
+                      Due Date
+                    </span>
+
+                    <strong
+                      className={
+                        overdue
+                          ? "overdue-date"
+                          : ""
+                      }
+                    >
+                      {formatDate(
+                        getDueDate(
+                          billing
+                        )
+                      )}
+                    </strong>
+                  </div>
+
+                  <div className="billing-mobile-field billing-mobile-total">
+                    <span>
+                      Total
+                    </span>
+
+                    <strong>
+                      {formatCurrency(
+                        getAmount(
+                          billing
+                        ),
+                        getCurrency(
+                          billing
+                        )
+                      )}
+                    </strong>
+                  </div>
+                </div>
+
+                {showActions && (
+                  <div className="billing-mobile-card-actions">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-secondary"
+                      onClick={() =>
+                        handleView(
+                          billing
+                        )
+                      }
+                    >
+                      View
+                    </button>
+
+                    {onEdit && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary"
+                        onClick={() =>
+                          handleEdit(
+                            billing
+                          )
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
+
+                    {onPayment && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={() =>
+                          handlePayment(
+                            billing
+                          )
+                        }
+                      >
+                        Payment
+                      </button>
+                    )}
+
+                    {onRefund && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-warning"
+                        onClick={() =>
+                          onRefund(
+                            billing
+                          )
+                        }
+                      >
+                        Refund
+                      </button>
+                    )}
+
+                    {onDelete && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={() =>
+                          onDelete(
+                            billing
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          }
+        )}
+      </div>
+
+      {/* Pagination */}
+
+      {showPagination &&
+        calculatedTotal > 0 && (
+            <div className="table-pagination">
+                <div className="pagination-info">
+                    Showing{" "}
+                    <strong>
+                        {firstItem}
+                    </strong>{" "}
+                    to{" "}
+                    <strong>
+                        {lastItem}
+                    </strong>{" "}
+                    of{" "}
+                    <strong>
+                        {calculatedTotal}
+                    </strong>{" "}
+                    records
+                </div>
+
+            <div className="pagination-controls">
+              {onPageSizeChange && (
+                <label className="page-size-control">
+                    <span>
+                        Per page
+                    </span>
+
+                    <select
+                        value={
+                        pageSize
+                        }
+                        onChange={(
+                        event
+                        ) =>
+                        onPageSizeChange(
+                            Number(
+                            event
+                                .target
+                                .value
+                            )
+                        )
+                        }
+                    >
+                        <option value="5">
+                        5
+                        </option>
+
+                        <option value="10">
+                        10
+                        </option>
+
+                        <option value="20">
+                        20
+                        </option>
+
+                        <option value="50">
+                        50
+                        </option>
+
+                        <option value="100">
+                        100
+                        </option>
                     </select>
-                </div>
-            </div>
-        </section>
-
-        {/* Line Items */}
-        <section className="form-section">
-            <div className="form-section-header form-section-header-row">
-                <div>
-                    <h3>
-                        Billing Items{" "}
-                        <span className="required">
-                            *
-                        </span>
-                    </h3>
-
-                    <p>
-                        Add the services, procedures,
-                        tests, or other charges.
-                    </p>
-                </div>
+                </label>
+            )}
 
                 <button
                     type="button"
-                    className="btn btn-secondary"
-                    onClick={handleAddItem}
-                    disabled={loading}
+                    className="btn btn-sm btn-secondary"
+                    disabled={
+                        !canPrevious ||
+                        !onPageChange
+                    }
+                    onClick={() =>
+                        onPageChange?.(
+                            page - 1
+                        )
+                    }
+                    aria-label="Previous page"
                 >
-                    + Add Item
+                    Previous
+                </button>
+
+                <span className="pagination-current">
+                    Page{" "}
+                    <strong>
+                        {page}
+                    </strong>{" "}
+                        of{" "}
+                    <strong>
+                        {calculatedTotalPages}
+                    </strong>
+                </span>
+
+                <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    disabled={
+                    !canNext ||
+                    !onPageChange
+                    }
+                    onClick={() =>
+                    onPageChange?.(
+                        page + 1
+                    )
+                    }
+                    aria-label="Next page"
+                >
+                    Next
                 </button>
             </div>
-
-                {errors.items && (
-                <div className="field-error">
-                    {errors.items}
-                </div>
-            )}
-
-            <div className="billing-items">
-                {formData.items.map(
-                    (item, index) => {
-                        const itemTotals = calculateItemTotals(item);
-
-                        return (
-                            <div
-                                key={index}
-                                className="billing-item"
-                            >
-                            <div className="billing-item-header">
-                                <h4>Item{" "}{index + 1}</h4>
-
-                                {formData.items.length > 1 && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm btn-danger"
-                                        onClick={() => handleRemoveItem(index)}
-                                        disabled={loading}
-                                    >
-                                        Remove
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="form-grid">
-                            
-                                {/* Description */}
-                                <div className="form-group form-group-full">
-                                    <label htmlFor={`item-description-${index}`}>
-                                            Description{" "}
-                                        <span className="required">*</span>
-                                    </label>
-
-                                    <input
-                                        id={`item-description-${index}`}
-                                        type="text"
-                                        value={item.description}
-                                        onChange={(event) =>
-                                            handleItemChange(
-                                                index,
-                                                "description",
-                                                event
-                                                .target
-                                                .value
-                                            )
-                                        }
-                                        placeholder="e.g. Consultation, CBC Test, Room Charges"
-                                        maxLength={MAX_ITEM_DESCRIPTION_LENGTH}
-                                        disabled={loading}
-                                        className={
-                                        errors[`items.${index}.description`]
-                                            ? "input-error"
-                                            : ""
-                                        }
-                                    />
-
-                                    {errors[`items.${index}.description`] && (
-                                    <span className="field-error">
-                                        {errors[`items.${index}.description`]}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Quantity */}
-                            <div className="form-group">
-                                <label htmlFor={`item-quantity-${index}`}>
-                                    Quantity{" "}
-                                    <span className="required">*</span>
-                                </label>
-
-                                <input
-                                    id={`item-quantity-${index}`}
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    value={item.quantity}
-                                    onChange={(event) =>
-                                        handleItemChange(
-                                            index,
-                                            "quantity",
-                                            event
-                                            .target
-                                            .value
-                                        )
-                                    }
-                                    disabled={loading}
-                                    className={
-                                    errors[`items.${index}.quantity`]
-                                        ? "input-error"
-                                        : ""
-                                    }
-                                />
-
-                                {errors[`items.${index}.quantity`] && (                            
-                                    <span className="field-error">
-                                        {
-                                            errors[`items.${index}.quantity`]
-                                        }
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Unit Price */}
-
-                            <div className="form-group">
-                                <label htmlFor={`item-price-${index}`}>Unit Price{" "}
-                                    <span className="required">*</span>
-                                </label>
-
-                                <input
-                                    id={`item-price-${index}`}
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.unitPrice}
-                                    onChange={(event) =>
-                                        handleItemChange(
-                                            index,
-                                            "unitPrice",
-                                            event
-                                            .target
-                                            .value
-                                        )
-                                    }
-                                    placeholder="0.00"
-                                    disabled={loading}
-                                    className={
-                                        errors[`items.${index}.unitPrice`]
-                                            ? "input-error"
-                                            : ""
-                                        }
-                                />
-
-                                {errors[`items.${index}.unitPrice`] && (
-                                    <span className="field-error">
-                                            {errors[`items.${index}.unitPrice`]}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Discount */}
-
-                            <div className="form-group">
-                                <label htmlFor={`item-discount-${index}`}>Discount</label>
-
-                                <input
-                                    id={`item-discount-${index}`}
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.discount}
-                                    onChange={(event) =>
-                                        handleItemChange(
-                                            index,
-                                            "discount",
-                                            event
-                                            .target
-                                            .value
-                                        )
-                                    }
-                                    placeholder="0.00"
-                                    disabled={loading}
-                                    className={
-                                        errors[`items.${index}.discount`]
-                                            ? "input-error"
-                                            : ""
-                                        }
-                                />
-
-                                {errors[`items.${index}.discount`] && (
-                                    <span className="field-error">
-                                        {errors[`items.${index}.discount`]}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Tax */}
-
-                            <div className="form-group">
-                                <label  htmlFor={`item-tax-${index}`}>Tax Rate (%)</label>
-
-                                <input
-                                    id={`item-tax-${index}`}
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={item.taxRate}
-                                    onChange={(event) =>
-                                        handleItemChange(
-                                            index,
-                                            "taxRate",
-                                            event
-                                            .target
-                                            .value
-                                        )
-                                    }
-                                    placeholder="0"
-                                    disabled={loading}
-                                    className={
-                                        errors[`items.${index}.taxRate`]
-                                            ? "input-error"
-                                            : ""
-                                        }
-                                />
-
-                                    {errors[`items.${index}.taxRate`] && (
-                                        <span className="field-error">
-                                            {errors[`items.${index}.taxRate`]}
-                                        </span>
-                                    )}
-                            </div>
-                        </div>
-
-                        {/* Item Total */}
-
-                        <div className="billing-item-total">
-                            <span>Item Total</span>
-                                <strong>
-                                    {formatMoney(
-                                        itemTotals.total,
-                                        formData.currency
-                                    )}
-                                </strong>
-                            </div>
-                        </div>
-                        );
-                    }
-                )}
-            </div>
-        </section>
-
-        {/* Notes */}
-
-        <section className="form-section">
-            <div className="form-section-header">
-                <h3>Notes</h3>
-
-                <p>
-                    Add any additional billing
-                    information or instructions.
-                </p>
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="notes">Billing Notes</label>
-
-                <textarea
-                    id="notes"
-                    name="notes"
-                    rows={5}
-                    value={formData.notes}
-                    onChange={handleChange}
-                    placeholder="Add additional billing notes..."
-                    maxLength={
-                    MAX_NOTES_LENGTH
-                    }
-                    disabled={loading}
-                    className={
-                    errors.notes
-                        ? "input-error"
-                        : ""
-                    }
-                />
-
-                <div className="input-meta">
-                    <span>
-                        {errors.notes ? (
-                            <span className="field-error">
-                            {errors.notes}
-                            </span>
-                        ) : (
-                            "Optional billing information."
-                        )}
-                    </span>
-
-                    <span>
-                        {formData.notes.length}/
-                        {MAX_NOTES_LENGTH}
-                    </span>
-
-                </div>
-
-            </div>
-        </section>
-
-        {/* Summary */}
-        <section className="billing-summary">
-            <div className="billing-summary-row">
-                <span>Subtotal</span>
-
-                <strong>
-                    {formatMoney(
-                    totals.subtotal,
-                    formData.currency
-                    )}
-                </strong>
-            </div>
-
-            <div className="billing-summary-row">
-                <span>Discount</span>
-
-                <strong>
-                    -
-                    {formatMoney(
-                    totals.discount,
-                    formData.currency
-                    )}
-                </strong>
-            </div>
-
-            <div className="billing-summary-row">
-                <span>Tax</span>
-
-                <strong>
-                    {formatMoney(
-                    totals.tax,
-                    formData.currency
-                    )}
-                </strong>
-            </div>
-
-            <div className="billing-summary-row billing-summary-total">
-                <span>Total</span>
-
-                <strong>
-                    {formatMoney(
-                    totals.total,
-                    formData.currency
-                    )}
-                </strong>
-            </div>
-        </section>
-
-        {/* Actions */}
-
-        <div className="form-actions">
-            <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={
-                    handleCancel
-                }
-                disabled={loading}
-                >
-                Cancel
-            </button>
-
-            <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading}
-            >
-            {loading
-                ? isEditMode
-                ? "Updating..."
-                : "Creating..."
-                : isEditMode
-                ? "Update Billing"
-                : "Create Billing"}
-            </button>
-        </div>
-    </form>
+          </div>
+        )}
+    </div>
   );
 };
 
-export default BillingForm;
+export default BillingTable;
