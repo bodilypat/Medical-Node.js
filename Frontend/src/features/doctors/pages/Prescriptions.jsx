@@ -15,11 +15,16 @@ const Prescriptions = () => {
 
   if (error) {
     return (
-      <section>
-        <h1>Prescriptions</h1>
-        <p>{error}</p>
+      <section
+        className="doctor-prescriptions-page doctor-prescriptions-page--error"
+        aria-labelledby="prescriptions-title"
+      >
+        <header>
+          <h1 id="prescriptions-title">Prescriptions</h1>
+          <p role="alert">Unable to load prescriptions: {error}</p>
+        </header>
 
-        <button type="button" onClick={refetch}>
+        <button type="button" onClick={refetch} aria-label="Retry loading prescriptions">
           Try Again
         </button>
       </section>
@@ -27,9 +32,12 @@ const Prescriptions = () => {
   }
 
   return (
-    <section className="doctor-prescriptions-page">
+    <section
+      className="doctor-prescriptions-page"
+      aria-labelledby="prescriptions-title"
+    >
       <header>
-        <h1>Prescriptions</h1>
+        <h1 id="prescriptions-title">Prescriptions</h1>
         <p>Manage prescriptions issued to your patients.</p>
       </header>
 

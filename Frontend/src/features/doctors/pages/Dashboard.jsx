@@ -17,14 +17,19 @@ const Dashboard = () => {
   } = useDoctorDashboard();
 
   if (loading) {
-    return <div>Loading dashboard...</div>;
+    return (
+      <section className="doctor-dashboard" aria-busy="true" aria-live="polite">
+        <h1>Doctor Dashboard</h1>
+        <p>Loading dashboard...</p>
+      </section>
+    );
   }
 
   if (error) {
     return (
-      <section>
-        <h1>Doctor Dashboard</h1>
-        <p>{error}</p>
+      <section className="doctor-dashboard" aria-labelledby="doctor-dashboard-title">
+        <h1 id="doctor-dashboard-title">Doctor Dashboard</h1>
+        <p role="alert">{error}</p>
 
         <button type="button" onClick={refetch}>
           Try Again
@@ -33,18 +38,21 @@ const Dashboard = () => {
     );
   }
 
-  const stats = dashboard?.stats || {};
-  const todayAppointments =
-    dashboard?.todayAppointments || [];
-  const upcomingAppointments =
-    dashboard?.upcomingAppointments || [];
-  const recentPatients =
-    dashboard?.recentPatients || [];
+  const stats = dashboard?.stats ?? {};
+  const todayAppointments = Array.isArray(dashboard?.todayAppointments)
+    ? dashboard.todayAppointments
+    : [];
+  const upcomingAppointments = Array.isArray(dashboard?.upcomingAppointments)
+    ? dashboard.upcomingAppointments
+    : [];
+  const recentPatients = Array.isArray(dashboard?.recentPatients)
+    ? dashboard.recentPatients
+    : [];
 
   return (
-    <section className="doctor-dashboard">
+    <section className="doctor-dashboard" aria-labelledby="doctor-dashboard-title">
       <header>
-        <h1>Doctor Dashboard</h1>
+        <h1 id="doctor-dashboard-title">Doctor Dashboard</h1>
         <p>Overview of your clinical activities.</p>
       </header>
 

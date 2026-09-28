@@ -9,13 +9,19 @@ import useMedicalRecords from "../hooks/useMedicalRecords";
 
 const MedicalRecords = () => {
   const [patientId, setPatientId] = useState("");
+  const [searchedPatientId, setSearchedPatientId] = useState("");
 
   const {
     records,
     loading,
     error,
     refetch,
-  } = useMedicalRecords(patientId);
+  } = useMedicalRecords(searchedPatientId);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    setSearchedPatientId(patientId.trim());
+  };
 
   return (
     <section className="doctor-medical-records-page">
@@ -24,24 +30,26 @@ const MedicalRecords = () => {
         <p>Review and manage patient medical records.</p>
       </header>
 
-      <div>
+      <form onSubmit={handleSearch}>
         <label htmlFor="patientId">Patient ID</label>
 
         <input
           id="patientId"
           value={patientId}
-          onChange={(event) =>
-            setPatientId(event.target.value)
-          }
+          onChange={(event) => setPatientId(event.target.value)}
           placeholder="Enter patient ID"
+          autoComplete="off"
         />
-      </div>
+        <button type="submit" disabled={loading || !patientId.trim()}>
+          {loading ? "Searching…" : "Search records"}
+        </button>
+      </form>
 
       {error && (
         <div>
-          <p>{error}</p>
+          <p role="alert">{error}</p>
 
-          <button type="button" onClick={refetch}>
+          <button type="button" onClick={refetch} disabled={loading}>
             Try Again
           </button>
         </div>

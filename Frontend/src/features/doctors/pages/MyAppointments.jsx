@@ -2,7 +2,7 @@
 /* File: #src/features/doctors/pages/MyAppointments.jsx */ 
 /* **************************************************** */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import AppointmentTable from "../components/appointments/AppointmentTable";
 import AppointmentFilters from "../components/appointments/AppointmentFilters";
@@ -11,23 +11,18 @@ import useMyAppointments from "../hooks/useMyAppointments";
 const MyAppointments = () => {
   const [filters, setFilters] = useState({});
 
-  const params = useMemo(
-    () => ({ ...filters }),
-    [filters]
-  );
-
   const {
     appointments,
     loading,
     error,
     refetch,
-  } = useMyAppointments(params);
+  } = useMyAppointments(filters);
 
   if (error) {
     return (
       <section>
         <h1>My Appointments</h1>
-        <p>{error}</p>
+        <p role="alert">{error}</p>
 
         <button type="button" onClick={refetch}>
           Try Again
@@ -41,6 +36,9 @@ const MyAppointments = () => {
       <header>
         <h1>My Appointments</h1>
         <p>Manage your scheduled patient appointments.</p>
+        <button type="button" onClick={refetch} disabled={loading}>
+          {loading ? "Refreshing…" : "Refresh appointments"}
+        </button>
       </header>
 
       <AppointmentFilters

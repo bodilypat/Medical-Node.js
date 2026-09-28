@@ -2,7 +2,7 @@
 /* File: #src/features/doctors/pages/Patients.jsx */ 
 /* ********************************************** */
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 import PatientSearch from "../components/patients/PatientSearch";
 import PatientTable from "../components/patients/PatientTable";
@@ -10,12 +10,13 @@ import useDoctorPatients from "../hooks/useDoctorPatients";
 
 const Patients = () => {
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
 
   const params = useMemo(
     () => ({
-      search,
+      search: deferredSearch.trim(),
     }),
-    [search]
+    [deferredSearch]
   );
 
   const {
