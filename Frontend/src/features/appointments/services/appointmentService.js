@@ -4,6 +4,9 @@
 
 import api from "../../../services/api";
 
+const getAppointmentPath = (appointmentId, suffix = "") =>
+  `/appointments/${encodeURIComponent(appointmentId)}${suffix}`;
+
 const appointmentService = {
   getAll: async (params = {}) => {
     const response = await api.get("/appointments", {
@@ -14,9 +17,7 @@ const appointmentService = {
   },
 
   getById: async (appointmentId) => {
-    const response = await api.get(
-      `/appointments/${appointmentId}`
-    );
+    const response = await api.get(getAppointmentPath(appointmentId));
 
     return response.data;
   },
@@ -28,17 +29,14 @@ const appointmentService = {
   },
 
   update: async (appointmentId, data) => {
-    const response = await api.put(
-      `/appointments/${appointmentId}`,
-      data
-    );
+    const response = await api.put(getAppointmentPath(appointmentId), data);
 
     return response.data;
   },
 
   updateStatus: async (appointmentId, status) => {
     const response = await api.patch(
-      `/appointments/${appointmentId}/status`,
+      getAppointmentPath(appointmentId, "/status"),
       { status }
     );
 
@@ -47,7 +45,7 @@ const appointmentService = {
 
   cancel: async (appointmentId, reason = "") => {
     const response = await api.patch(
-      `/appointments/${appointmentId}/cancel`,
+      getAppointmentPath(appointmentId, "/cancel"),
       { reason }
     );
 
@@ -55,16 +53,14 @@ const appointmentService = {
   },
 
   confirm: async (appointmentId) => {
-    const response = await api.patch(
-      `/appointments/${appointmentId}/confirm`
-    );
+    const response = await api.patch(getAppointmentPath(appointmentId, "/confirm"));
 
     return response.data;
   },
 
   complete: async (appointmentId, data = {}) => {
     const response = await api.patch(
-      `/appointments/${appointmentId}/complete`,
+      getAppointmentPath(appointmentId, "/complete"),
       data
     );
 
@@ -72,9 +68,7 @@ const appointmentService = {
   },
 
   delete: async (appointmentId) => {
-    const response = await api.delete(
-      `/appointments/${appointmentId}`
-    );
+    const response = await api.delete(getAppointmentPath(appointmentId));
 
     return response.data;
   },
