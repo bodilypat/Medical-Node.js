@@ -21,12 +21,14 @@ const BookingAppointment = () => {
       const appointment =
         await createAppointment(data);
 
-      const id = appointment?.id;
+      const id = appointment?.id ?? appointment?._id;
 
       if (id) {
-        navigate(`/appointments/${id}`);
+        navigate(`/appointments/${encodeURIComponent(id)}`, {
+          replace: true,
+        });
       } else {
-        navigate("/appointments");
+        navigate("/appointments", { replace: true });
       }
     } catch {
       // The hook exposes the error to the UI.
@@ -41,7 +43,7 @@ const BookingAppointment = () => {
       </header>
 
       {error && (
-        <div className="error-state">
+        <div className="error-state" role="alert" aria-live="polite">
           {error}
         </div>
       )}

@@ -30,24 +30,23 @@ const AppointmentDetailsPage = () => {
   } = useAppointmentActions();
 
   const handleConfirm = async (appointmentId) => {
-    await confirmAppointment(appointmentId);
-    await refetch();
+    const result = await confirmAppointment(appointmentId);
+    if (result !== false) await refetch();
   };
 
   const handleCancel = async (appointmentId) => {
-    await cancelAppointment(appointmentId);
-    await refetch();
+    const result = await cancelAppointment(appointmentId);
+    if (result !== false) await refetch();
   };
 
   const handleComplete = async (appointmentId) => {
-    await completeAppointment(appointmentId);
-    await refetch();
+    const result = await completeAppointment(appointmentId);
+    if (result !== false) await refetch();
   };
 
   const handleDelete = async (appointmentId) => {
-    await deleteAppointment(appointmentId);
-
-    navigate("/appointments");
+    const result = await deleteAppointment(appointmentId);
+    if (result !== false) navigate("/appointments", { replace: true });
   };
 
   if (loading) {
@@ -58,7 +57,7 @@ const AppointmentDetailsPage = () => {
     return (
       <section>
         <h1>Appointment</h1>
-        <p>{error}</p>
+        <p role="alert">{error}</p>
 
         <button
           type="button"
@@ -79,6 +78,7 @@ const AppointmentDetailsPage = () => {
       <button
         type="button"
         onClick={() => navigate(-1)}
+        aria-label="Go back"
       >
         Back
       </button>
@@ -88,7 +88,7 @@ const AppointmentDetailsPage = () => {
       />
 
       {actionError && (
-        <p className="error-message">
+        <p className="error-message" role="alert">
           {actionError}
         </p>
       )}
