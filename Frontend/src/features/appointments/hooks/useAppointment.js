@@ -14,6 +14,7 @@ const useAppointment = (appointmentId) => {
   const fetchAppointment = useCallback(async () => {
     if (!appointmentId) {
       setAppointment(null);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -29,6 +30,7 @@ const useAppointment = (appointmentId) => {
 
       setAppointment(result?.data ?? result);
     } catch (err) {
+      setAppointment(null);
       setError(
         err?.response?.data?.message ||
           err?.message ||

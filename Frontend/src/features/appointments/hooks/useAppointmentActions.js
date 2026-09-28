@@ -9,8 +9,10 @@ import appointmentService from "../services/appointmentService";
 const useAppointmentActions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const pendingActions = useRef(0);
 
   const execute = async (action) => {
+    pendingActions.current += 1;
     try {
       setLoading(true);
       setError(null);
@@ -25,7 +27,8 @@ const useAppointmentActions = () => {
       setError(message);
       throw err;
     } finally {
-      setLoading(false);
+      pendingActions.current -= 1;
+      setLoading(pendingActions.current > 0);
     }
   };
 

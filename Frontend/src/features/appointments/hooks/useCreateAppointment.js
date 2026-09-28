@@ -2,7 +2,7 @@
 /* File: #src/features/appointments/hooks/useCreateAppointment.js */ 
 /* ************************************************************** */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import appointmentService from "../services/appointmentService";
 
@@ -10,7 +10,7 @@ const useCreateAppointment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const createAppointment = async (data) => {
+  const createAppointment = useCallback(async (data) => {
     try {
       setLoading(true);
       setError(null);
@@ -30,7 +30,7 @@ const useCreateAppointment = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     createAppointment,
