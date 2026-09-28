@@ -41,21 +41,21 @@ const AppointmentTable = ({
         </thead>
 
         <tbody>
-          {appointments.map((appointment) => {
+          {appointments.map((appointment, index) => {
             const patient = appointment.patient;
             const doctor = appointment.doctor;
+            const patientName = [patient?.firstName, patient?.lastName]
+              .filter(Boolean)
+              .join(" ");
+            const doctorName = [doctor?.firstName, doctor?.lastName]
+              .filter(Boolean)
+              .join(" ");
 
             return (
-              <tr key={appointment.id}>
-                <td>
-                  {patient?.firstName}{" "}
-                  {patient?.lastName}
-                </td>
+              <tr key={appointment.id ?? appointment._id ?? index}>
+                <td>{patientName || "-"}</td>
 
-                <td>
-                  {doctor?.firstName}{" "}
-                  {doctor?.lastName}
-                </td>
+                <td>{doctorName || "-"}</td>
 
                 <td>
                   {appointment.appointmentDate || "-"}
@@ -76,6 +76,8 @@ const AppointmentTable = ({
                 <td>
                   <button
                     type="button"
+                    disabled={!onView}
+                    aria-label={`View appointment for ${patientName || "patient"}`}
                     onClick={() => onView?.(appointment)}
                   >
                     View

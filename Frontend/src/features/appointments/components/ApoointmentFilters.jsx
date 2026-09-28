@@ -11,9 +11,11 @@ const AppointmentFilters = ({
   onChange,
   onReset,
 }) => {
+  const currentFilters = filters || {};
+
   const update = (field, value) => {
     onChange?.({
-      ...filters,
+      ...currentFilters,
       [field]: value,
     });
   };
@@ -28,11 +30,12 @@ const AppointmentFilters = ({
         <input
           id="appointment-search"
           type="search"
-          value={filters?.search || ""}
+          value={currentFilters.search || ""}
           onChange={(event) =>
             update("search", event.target.value)
           }
           placeholder="Search patient or doctor..."
+          autoComplete="off"
         />
       </div>
 
@@ -43,7 +46,7 @@ const AppointmentFilters = ({
 
         <select
           id="appointment-status"
-          value={filters?.status || ""}
+          value={currentFilters.status || ""}
           onChange={(event) =>
             update("status", event.target.value)
           }
@@ -71,7 +74,8 @@ const AppointmentFilters = ({
         <input
           id="appointment-date-from"
           type="date"
-          value={filters?.dateFrom || ""}
+          value={currentFilters.dateFrom || ""}
+          max={currentFilters.dateTo || undefined}
           onChange={(event) =>
             update("dateFrom", event.target.value)
           }
@@ -86,14 +90,15 @@ const AppointmentFilters = ({
         <input
           id="appointment-date-to"
           type="date"
-          value={filters?.dateTo || ""}
+          value={currentFilters.dateTo || ""}
+          min={currentFilters.dateFrom || undefined}
           onChange={(event) =>
             update("dateTo", event.target.value)
           }
         />
       </div>
 
-      <button type="button" onClick={onReset}>
+      <button type="button" onClick={onReset} disabled={!onReset}>
         Reset
       </button>
     </div>

@@ -11,6 +11,10 @@ const AppointmentDetails = ({ appointment }) => {
 
   const patient = appointment.patient;
   const doctor = appointment.doctor;
+  const formatName = (person) =>
+    [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "-";
+  const formatValue = (value) =>
+    value === null || value === undefined || value === "" ? "-" : value;
 
   return (
     <section className="appointment-details">
@@ -24,29 +28,25 @@ const AppointmentDetails = ({ appointment }) => {
 
       <dl>
         <dt>Patient</dt>
-        <dd>
-          {patient?.firstName} {patient?.lastName}
-        </dd>
+        <dd>{formatName(patient)}</dd>
 
         <dt>Doctor</dt>
-        <dd>
-          {doctor?.firstName} {doctor?.lastName}
-        </dd>
+        <dd>{formatName(doctor)}</dd>
 
         <dt>Date</dt>
-        <dd>{appointment.appointmentDate}</dd>
+        <dd>{formatValue(appointment.appointmentDate)}</dd>
 
         <dt>Time</dt>
-        <dd>{appointment.appointmentTime}</dd>
+        <dd>{formatValue(appointment.appointmentTime)}</dd>
 
         <dt>Type</dt>
-        <dd>{appointment.type || "-"}</dd>
+        <dd>{formatValue(appointment.type)}</dd>
 
         <dt>Reason</dt>
-        <dd>{appointment.reason || "-"}</dd>
+        <dd>{formatValue(appointment.reason)}</dd>
 
         <dt>Notes</dt>
-        <dd>{appointment.notes || "-"}</dd>
+        <dd>{formatValue(appointment.notes)}</dd>
       </dl>
     </section>
   );

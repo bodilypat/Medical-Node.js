@@ -5,55 +5,55 @@
 const AppointmentSummary = ({
   appointments = [],
 }) => {
-  const total = appointments.length;
+  const counts = appointments.reduce(
+    (summary, appointment) => {
+      const status = String(appointment?.status || "").toUpperCase();
 
-  const completed = appointments.filter(
-    (appointment) =>
-      appointment.status === "COMPLETED"
-  ).length;
+      if (status === "COMPLETED") summary.completed += 1;
+      if (status === "CANCELLED") summary.cancelled += 1;
+      if (status === "SCHEDULED" || status === "CONFIRMED") {
+        summary.scheduled += 1;
+      }
 
-  const cancelled = appointments.filter(
-    (appointment) =>
-      appointment.status === "CANCELLED"
-  ).length;
-
-  const scheduled = appointments.filter(
-    (appointment) =>
-      appointment.status === "SCHEDULED" ||
-      appointment.status === "CONFIRMED"
-  ).length;
+      return summary;
+    },
+    { completed: 0, cancelled: 0, scheduled: 0 }
+  );
 
   const items = [
     {
       label: "Total",
-      value: total,
+      value: appointments.length,
     },
     {
       label: "Scheduled",
-      value: scheduled,
+      value: counts.scheduled,
     },
     {
       label: "Completed",
-      value: completed,
+      value: counts.completed,
     },
     {
       label: "Cancelled",
-      value: cancelled,
+      value: counts.cancelled,
     },
   ];
 
   return (
-    <div className="appointment-summary">
+    <section
+      className="appointment-summary"
+      aria-label="Appointment summary"
+    >
       {items.map((item) => (
-        <div
+        <article
           key={item.label}
           className="appointment-summary__item"
         >
           <span>{item.label}</span>
           <strong>{item.value}</strong>
-        </div>
+        </article>
       ))}
-    </div>
+    </section>
   );
 };
 

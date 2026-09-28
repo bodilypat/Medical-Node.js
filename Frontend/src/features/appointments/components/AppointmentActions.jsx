@@ -21,45 +21,53 @@ const AppointmentActions = ({
   }
 
   const { status, id } = appointment;
+  const isScheduled = status === APPOINTMENT_STATUS.SCHEDULED;
+  const isActive =
+    status !== APPOINTMENT_STATUS.CANCELLED &&
+    status !== APPOINTMENT_STATUS.COMPLETED;
+  const canComplete =
+    isScheduled || status === APPOINTMENT_STATUS.CONFIRMED;
 
   return (
-    <div className="appointment-actions">
-      {(status === APPOINTMENT_STATUS.SCHEDULED ||
-        status === APPOINTMENT_STATUS.CONFIRMED) && (
+    <div className="appointment-actions" aria-label="Appointment actions">
+      {canComplete && (
         <Button
           type="button"
           onClick={() => onComplete?.(id)}
           disabled={loading}
+          aria-label="Complete appointment"
         >
           Complete
         </Button>
       )}
 
-      {status === APPOINTMENT_STATUS.SCHEDULED && (
+      {isScheduled && (
         <Button
           type="button"
           onClick={() => onConfirm?.(id)}
           disabled={loading}
+          aria-label="Confirm appointment"
         >
           Confirm
         </Button>
       )}
 
-      {status !== APPOINTMENT_STATUS.CANCELLED &&
-        status !== APPOINTMENT_STATUS.COMPLETED && (
+      {isActive && (
           <Button
             type="button"
             onClick={() => onCancel?.(id)}
             disabled={loading}
+            aria-label="Cancel appointment"
           >
             Cancel
           </Button>
-        )}
+      )}
 
       <Button
         type="button"
         onClick={() => onDelete?.(id)}
         disabled={loading}
+        aria-label="Delete appointment"
       >
         Delete
       </Button>

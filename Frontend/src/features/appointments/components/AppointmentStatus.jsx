@@ -32,11 +32,17 @@ const statusConfig = {
 };
 
 const AppointmentStatus = ({ status }) => {
-  const config =
-    statusConfig[status] || {
-      label: status || "Unknown",
-      variant: "secondary",
-    };
+  const normalizedStatus =
+    typeof status === "string" ? status.trim().toUpperCase() : "";
+  const matchedStatus = Object.keys(statusConfig).find(
+    (key) => key.toUpperCase() === normalizedStatus,
+  );
+  const config = matchedStatus
+    ? statusConfig[matchedStatus]
+    : {
+        label: typeof status === "string" && status.trim() ? status.trim() : "Unknown",
+        variant: "secondary",
+      };
 
   return (
     <Badge variant={config.variant}>

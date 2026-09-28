@@ -2,7 +2,7 @@
 /* File: #src/features/appointments/components/AppointmentForm.jsx */ 
 /* *************************************************************** */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -12,6 +12,16 @@ import {
   APPOINTMENT_TYPE_OPTIONS,
 } from "../constants/appointmentConstants";
 
+const getFormValues = (values = {}) => ({
+  patientId: values.patientId || "",
+  doctorId: values.doctorId || "",
+  appointmentDate: values.appointmentDate || "",
+  appointmentTime: values.appointmentTime || "",
+  type: values.type || "",
+  reason: values.reason || "",
+  notes: values.notes || "",
+});
+
 const AppointmentForm = ({
   initialValues = {},
   patients = [],
@@ -19,17 +29,13 @@ const AppointmentForm = ({
   onSubmit,
   loading = false,
 }) => {
-  const [form, setForm] = useState({
-    patientId: initialValues.patientId || "",
-    doctorId: initialValues.doctorId || "",
-    appointmentDate:
-      initialValues.appointmentDate || "",
-    appointmentTime:
-      initialValues.appointmentTime || "",
-    type: initialValues.type || "",
-    reason: initialValues.reason || "",
-    notes: initialValues.notes || "",
-  });
+  const [form, setForm] = useState(() =>
+    getFormValues(initialValues)
+  );
+
+  useEffect(() => {
+    setForm(getFormValues(initialValues));
+  }, [initialValues]);
 
   const update = (field, value) => {
     setForm((current) => ({
@@ -41,7 +47,11 @@ const AppointmentForm = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    onSubmit?.(form);
+    onSubmit?.({
+      ...form,
+      reason: form.reason.trim(),
+      notes: form.notes.trim(),
+    });
   };
 
   return (
@@ -51,6 +61,7 @@ const AppointmentForm = ({
     >
       <Select
         label="Patient"
+        required
         value={form.patientId}
         onChange={(event) =>
           update("patientId", event.target.value)
@@ -69,6 +80,7 @@ const AppointmentForm = ({
 
       <Select
         label="Doctor"
+        required
         value={form.doctorId}
         onChange={(event) =>
           update("doctorId", event.target.value)
@@ -88,6 +100,7 @@ const AppointmentForm = ({
       <Input
         label="Date"
         type="date"
+        required
         value={form.appointmentDate}
         onChange={(event) =>
           update(
@@ -100,6 +113,7 @@ const AppointmentForm = ({
       <Input
         label="Time"
         type="time"
+        required
         value={form.appointmentTime}
         onChange={(event) =>
           update(
@@ -111,6 +125,7 @@ const AppointmentForm = ({
 
       <Select
         label="Appointment Type"
+        required
         value={form.type}
         onChange={(event) =>
           update("type", event.target.value)
