@@ -21,6 +21,11 @@ export const PRESCRIPTION_STATUS = Object.freeze({
   CANCELLED: "CANCELLED",
 });
 
+export const DOCTOR_STATUS = Object.freeze({
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+});
+
 export const APPOINTMENT_STATUS_OPTIONS = Object.freeze([
   {
     value: APPOINTMENT_STATUS.SCHEDULED,
@@ -67,6 +72,17 @@ export const PRESCRIPTION_STATUS_OPTIONS = Object.freeze([
   {
     value: PRESCRIPTION_STATUS.CANCELLED,
     label: "Cancelled",
+  },
+]);
+
+export const DOCTOR_STATUS_OPTIONS = Object.freeze([
+  {
+    value: DOCTOR_STATUS.ACTIVE,
+    label: "Active",
+  },
+  {
+    value: DOCTOR_STATUS.INACTIVE,
+    label: "Inactive",
   },
 ]);
 
