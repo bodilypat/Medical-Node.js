@@ -2,15 +2,15 @@
 /* File: #src/features/appointments/constants/appointmentConstants.js */ 
 /* ****************************************************************** */
 
-export const APPOINTMENT_STATUS = {
+export const APPOINTMENT_STATUS = Object.freeze({
   SCHEDULED: "SCHEDULED",
   CONFIRMED: "CONFIRMED",
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",
   NO_SHOW: "NO_SHOW",
-};
+});
 
-export const APPOINTMENT_STATUS_OPTIONS = [
+export const APPOINTMENT_STATUS_OPTIONS = Object.freeze([
   {
     value: APPOINTMENT_STATUS.SCHEDULED,
     label: "Scheduled",
@@ -31,16 +31,16 @@ export const APPOINTMENT_STATUS_OPTIONS = [
     value: APPOINTMENT_STATUS.NO_SHOW,
     label: "No Show",
   },
-];
+]);
 
-export const APPOINTMENT_TYPES = {
+export const APPOINTMENT_TYPES = Object.freeze({
   CONSULTATION: "CONSULTATION",
   FOLLOW_UP: "FOLLOW_UP",
   CHECKUP: "CHECKUP",
   EMERGENCY: "EMERGENCY",
-};
+});
 
-export const APPOINTMENT_TYPE_OPTIONS = [
+export const APPOINTMENT_TYPE_OPTIONS = Object.freeze([
   {
     value: APPOINTMENT_TYPES.CONSULTATION,
     label: "Consultation",
@@ -57,15 +57,15 @@ export const APPOINTMENT_TYPE_OPTIONS = [
     value: APPOINTMENT_TYPES.EMERGENCY,
     label: "Emergency",
   },
-];
+]);
 
 export const APPOINTMENT_PAGE_SIZE = 10;
 
-export const DEFAULT_APPOINTMENT_FILTERS = {
+export const DEFAULT_APPOINTMENT_FILTERS = Object.freeze({
   search: "",
   status: "",
   doctorId: "",
   patientId: "",
   dateFrom: "",
   dateTo: "",
-};
+});
