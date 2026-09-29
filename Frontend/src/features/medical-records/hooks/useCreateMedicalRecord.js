@@ -2,7 +2,7 @@
 /* File: #src/features/medical-records/hooks/useCreateMedicalRecord.js */ 
 /* ******************************************************************* */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import medicalRecordService from "../services/medicalRecordService";
 
@@ -11,7 +11,7 @@ const useCreateMedicalRecord = () => {
     useState(false);
   const [error, setError] = useState(null);
 
-  const createMedicalRecord = async (data) => {
+  const createMedicalRecord = useCallback(async (data) => {
     try {
       setLoading(true);
       setError(null);
@@ -31,7 +31,7 @@ const useCreateMedicalRecord = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     createMedicalRecord,

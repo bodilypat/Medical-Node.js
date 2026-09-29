@@ -5,6 +5,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -15,10 +16,14 @@ const useMedicalRecord = (recordId) => {
   const [loading, setLoading] =
     useState(Boolean(recordId));
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
   const fetchRecord = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!recordId) {
       setRecord(null);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -32,15 +37,21 @@ const useMedicalRecord = (recordId) => {
           recordId
         );
 
-      setRecord(result?.data ?? result);
+      if (requestId === requestIdRef.current) {
+        setRecord(result?.data ?? result);
+      }
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load medical record."
-      );
+      if (requestId === requestIdRef.current) {
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load medical record."
+        );
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [recordId]);
 

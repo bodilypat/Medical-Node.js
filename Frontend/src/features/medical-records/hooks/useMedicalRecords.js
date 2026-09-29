@@ -5,6 +5,8 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -16,8 +18,14 @@ const useMedicalRecords = (params = {}) => {
     useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const requestId = useRef(0);
+
+  // Avoid refetching when callers create an equivalent params object on each render.
+  const paramsKey = useMemo(() => JSON.stringify(params), [params]);
 
   const fetchRecords = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+
     try {
       setLoading(true);
       setError(null);
@@ -25,17 +33,26 @@ const useMedicalRecords = (params = {}) => {
       const result =
         await medicalRecordService.getAll(params);
 
+      // Ignore responses from requests superseded by a newer request.
+      if (currentRequest !== requestId.current) return;
+
       setRecords(
-        result?.data ??
+        result?.data?.records ??
+          result?.data?.medicalRecords ??
+          result?.data ??
           result?.records ??
           result?.medicalRecords ??
           []
       );
 
       setPagination(
-        result?.pagination ?? null
+        result?.pagination ??
+          result?.data?.pagination ??
+          null
       );
     } catch (err) {
+      if (currentRequest !== requestId.current) return;
+
       setError(
         err?.response?.data?.message ||
           err?.message ||
@@ -44,7 +61,7 @@ const useMedicalRecords = (params = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [params, paramsKey]);
 
   useEffect(() => {
     fetchRecords();

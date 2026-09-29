@@ -2,18 +2,20 @@
 /* File: #src/features/medical-records/hooks/useMedicalRecordActions.js */ 
 /* ******************************************************************** */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import medicalRecordService from "../services/medicalRecordService";
 
 const useMedicalRecordActions = () => {
+  const activeActions = useRef(0);
   const [loading, setLoading] =
     useState(false);
   const [error, setError] = useState(null);
 
   const execute = async (action) => {
+    activeActions.current += 1;
+    setLoading(true);
     try {
-      setLoading(true);
       setError(null);
 
       return await action();
@@ -26,7 +28,8 @@ const useMedicalRecordActions = () => {
 
       throw err;
     } finally {
-      setLoading(false);
+      activeActions.current -= 1;
+      setLoading(activeActions.current > 0);
     }
   };
 
