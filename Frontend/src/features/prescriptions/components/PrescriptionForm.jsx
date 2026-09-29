@@ -1,7 +1,6 @@
-/* ************************************************************ */
+/* **************************************************************** */
 /* File: src/features/prescriptions/components/PrescriptionForm.jsx */
-/* ************************************************************ */
-
+/* **************************************************************** */
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
@@ -14,7 +13,6 @@ import {
 import {
     validatePrescription,
 } from "../utils";
-
 
 const INITIAL_FORM = {
 
@@ -44,8 +42,20 @@ const PrescriptionForm = ({
     onCancel,
 }) => {
 
-    const [formData, setFormData] = useState(INITIAL_FORM);
+    const [formData, setFormData] = useState(() => ({
+        ...INITIAL_FORM,
+        items: INITIAL_FORM.items.map((item) => ({ ...item })),
+    }));
     const [errors, setErrors] = useState({});
+
+    const createEmptyItem = () => ({
+        medicine_id: "",
+        dosage: "",
+        frequency: "",
+        duration: "",
+        quantity: 1,
+        instructions: "",
+    });
 
     useEffect(() => {
         if (initialValues) {
@@ -53,12 +63,14 @@ const PrescriptionForm = ({
             setFormData({
                 ...INITIAL_FORM,
                 ...initialValues,
-                items:
-                    initialValues.items?.length
-                        ? initialValues.items
-                        : INITIAL_FORM.items,
+                items: initialValues.items?.length
+                    ? initialValues.items.map((item) => ({ ...createEmptyItem(), ...item }))
+                    : [createEmptyItem()],
             });
-
+            setErrors({});
+        } else {
+            setFormData({ ...INITIAL_FORM, items: [createEmptyItem()] });
+            setErrors({});
         }
 
     }, [initialValues]);
@@ -79,6 +91,7 @@ const PrescriptionForm = ({
             ...previous,
             [name]: value,
         }));
+        setErrors((previous) => ({ ...previous, [name]: undefined }));
 
     };
 
@@ -98,14 +111,12 @@ const PrescriptionForm = ({
                 ...items[index],
                 [field]: value,
             };
-
             return {
                 ...previous,
                 items,
             };
-
         });
-
+        setErrors((previous) => ({ ...previous, items: undefined }));
     };
 
     /* ---------------------------------- */
@@ -117,19 +128,10 @@ const PrescriptionForm = ({
             ...previous,
             items: [
                 ...previous.items,
-                {
-                    medicine_id: "",
-                    dosage: "",
-                    frequency: "",
-                    duration: "",
-                    quantity: 1,
-                    instructions: "",
-                },
+                createEmptyItem(),
             ],
         }));
-
     };
-
 
     /* ---------------------------------- */
     /* Remove Medicine                    */
@@ -144,9 +146,7 @@ const PrescriptionForm = ({
                 previous.items.filter(
                     (_, i) => i !== index
                 ),
-
         }));
-
     };
 
     /* ---------------------------------- */
@@ -169,11 +169,8 @@ const PrescriptionForm = ({
             setErrors(validationErrors);
             return;
         }
-
-        await onSubmit?.(
-            formData
-        );
-
+        setErrors({});
+        await onSubmit?.(formData);
     };
 
     return (
@@ -233,7 +230,9 @@ const PrescriptionForm = ({
                     rows="3"
                     value={formData.diagnosis}
                     onChange={handleChange}
+                    aria-invalid={Boolean(errors.diagnosis)}
                 />
+                {errors.diagnosis && <small className="error-text">{errors.diagnosis}</small>}
 
             </section>
 
@@ -249,6 +248,7 @@ const PrescriptionForm = ({
                         type="button"
                         className="btn btn-secondary"
                         onClick={addMedicine}
+                        disabled={loading}
                     >
                         + Add Medicine
                     </button>
@@ -260,11 +260,12 @@ const PrescriptionForm = ({
                 ) => (
 
                     <div
-                        key={index}
+                        key={item.id ?? `${index}-${item.medicine_id}`}
                         className="prescription-item"
                     >
                         <MedicineSelector
                             value={item.medicine_id}
+                            aria-label={`Medicine ${index + 1}`}
                             onChange={(value) =>
                                 handleItemChange(
                                     index,
@@ -277,6 +278,7 @@ const PrescriptionForm = ({
                         <input
                             type="text"
                             placeholder="Dosage"
+                            aria-label={`Dosage for medicine ${index + 1}`}
                             value={item.dosage}
                             onChange={(event) =>
                                 handleItemChange(
@@ -290,6 +292,7 @@ const PrescriptionForm = ({
                         <input
                             type="text"
                             placeholder="Frequency"
+                            aria-label={`Frequency for medicine ${index + 1}`}
                             value={item.frequency}
                             onChange={(event) =>
                                 handleItemChange(
@@ -303,6 +306,7 @@ const PrescriptionForm = ({
                         <input
                             type="text"
                             placeholder="Duration"
+                            aria-label={`Duration for medicine ${index + 1}`}
                             value={item.duration}
                             onChange={(event) =>
                                 handleItemChange(
@@ -317,6 +321,7 @@ const PrescriptionForm = ({
                             type="number"
                             min="1"
                             placeholder="Quantity"
+                            aria-label={`Quantity for medicine ${index + 1}`}
                             value={item.quantity}
                             onChange={(event) =>
                                 handleItemChange(
@@ -330,6 +335,7 @@ const PrescriptionForm = ({
                         <textarea
                             rows="2"
                             placeholder="Instructions"
+                            aria-label={`Instructions for medicine ${index + 1}`}
                             value={item.instructions}
                             onChange={(event) =>
                                 handleItemChange(
@@ -345,6 +351,7 @@ const PrescriptionForm = ({
                             <button
                                 type="button"
                                 className="btn btn-danger"
+                                disabled={loading}
                                 onClick={() =>
                                     removeMedicine(index)
                                 }
@@ -365,8 +372,9 @@ const PrescriptionForm = ({
 
                 <div className="form-field">
 
-                    <label>Issued Date</label>
+                    <label htmlFor="prescription-issued-date">Issued Date</label>
                     <input
+                        id="prescription-issued-date"
                         type="date"
                         name="issued_date"
                         value={formData.issued_date}
@@ -377,8 +385,9 @@ const PrescriptionForm = ({
 
                 <div className="form-field">
 
-                    <label>Expiry Date</label>
+                    <label htmlFor="prescription-expires-at">Expiry Date</label>
                     <input
+                        id="prescription-expires-at"
                         type="date"
                         name="expires_at"
                         value={formData.expires_at}
@@ -391,8 +400,9 @@ const PrescriptionForm = ({
 
             {/* Notes */}
             <section className="form-section">
-                <label>Notes</label>
+                <label htmlFor="prescription-notes">Notes</label>
                 <textarea
+                    id="prescription-notes"
                     rows="4"
                     name="notes"
                     value={formData.notes}

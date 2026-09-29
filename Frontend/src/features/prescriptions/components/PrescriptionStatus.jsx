@@ -64,28 +64,27 @@ const PrescriptionStatus = ({
     showIcon = true,
 }) => {
     const normalizedStatus = normalizeStatus(status);
-    const config =
-        STATUS_CONFIG[normalizedStatus] ??
-        {
-            label: formatStatusLabel(status ?? "Unknown"),
-            className: "secondary",
-            icon: "•",
-        };
+    const config = STATUS_CONFIG[normalizedStatus];
+    const label = config?.label ?? formatStatusLabel(status ?? "Unknown");
+    const className = config?.className ?? "secondary";
+    const icon = config?.icon ?? "•";
+    const accessibleLabel = `Prescription status: ${label}`;
 
     return (
         <span
-            className={`status-badge status-${config.className}`}
-            aria-label={`Prescription status: ${config.label}`}
-            title={`Prescription status: ${config.label}`}
+            className={`status-badge status-${className}`}
+            role="status"
+            aria-label={accessibleLabel}
+            title={accessibleLabel}
         >
             {showIcon && (
                 <span className="status-icon" aria-hidden="true">
-                    {config.icon}
+                    {icon}
                 </span>
             )}
 
             <span className="status-text">
-                {config.label}
+                {label}
             </span>
         </span>
     );

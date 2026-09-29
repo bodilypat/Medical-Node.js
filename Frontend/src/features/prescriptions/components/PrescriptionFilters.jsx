@@ -36,10 +36,9 @@ const PrescriptionFilter = ({
     /* Sync external filters              */
     /* ---------------------------------- */
     useEffect(() => {
-        setLocalFilters((previousFilters) => ({
+        setLocalFilters(() => ({
             ...getEmptyFilters(),
             ...filters,
-            ...previousFilters,
         }));
     }, [filters]);
 
@@ -84,9 +83,13 @@ const PrescriptionFilter = ({
 
                 {/* Status */}
 
+                <label htmlFor="prescription-status">
+                    Status
+                </label>
                 <select
+                    id="prescription-status"
                     name="status"
-                    value={localFilters.status}
+                    value={localFilters.status ?? ""}
                     onChange={handleChange}
                 >
                     <option value="">
@@ -105,9 +108,13 @@ const PrescriptionFilter = ({
 
                 {/* Doctor */}
 
+                <label htmlFor="prescription-doctor">
+                    Doctor
+                </label>
                 <select
+                    id="prescription-doctor"
                     name="doctor_id"
-                    value={localFilters.doctor_id}
+                    value={localFilters.doctor_id ?? ""}
                     onChange={handleChange}
                 >
                     <option value="">
@@ -117,18 +124,22 @@ const PrescriptionFilter = ({
                     {doctors.map((doctor) => (
                         <option
                             key={doctor.id}
-                            value={doctor.id}
+                            value={String(doctor.id)}
                         >
-                            {doctor.full_name}
+                            {doctor.full_name || "Unnamed doctor"}
                         </option>
                     ))}
                 </select>
 
                 {/* Patient */}
 
+                <label htmlFor="prescription-patient">
+                    Patient
+                </label>
                 <select
+                    id="prescription-patient"
                     name="patient_id"
-                    value={localFilters.patient_id}
+                    value={localFilters.patient_id ?? ""}
                     onChange={handleChange}
                 >
                     <option value="">
@@ -138,9 +149,9 @@ const PrescriptionFilter = ({
                     {patients.map((patient) => (
                         <option
                             key={patient.id}
-                            value={patient.id}
+                            value={String(patient.id)}
                         >
-                            {patient.full_name}
+                            {patient.full_name || "Unnamed patient"}
                         </option>
                     ))}
                 </select>
