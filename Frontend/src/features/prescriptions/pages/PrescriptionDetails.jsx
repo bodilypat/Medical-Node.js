@@ -43,6 +43,13 @@ const PrescriptionDetails = () => {
     };
 
     /**
+     * Return to the prescriptions list
+     */
+    const handleBack = () => {
+        navigate("/prescriptions");
+    };
+
+    /**
      * Delete prescription
      */
     const handleDelete = async () => {
@@ -78,7 +85,8 @@ const PrescriptionDetails = () => {
                 error
             );
             setDeleteError(
-                error.message ?? "Unable to delete prescription. Please try again."
+                error?.message ??
+                "Unable to delete prescription. Please try again."
             );
         } finally {
             setDeleting(false);
@@ -181,9 +189,18 @@ const PrescriptionDetails = () => {
                     <button
                         type="button"
                         className="btn btn-secondary"
+                        onClick={handleBack}
+                    >
+                        Back
+                    </button>
+
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
                         onClick={
                             handlePrint
                         }
+                        disabled={deleting}
                     >
                         Print
                     </button>
@@ -194,6 +211,7 @@ const PrescriptionDetails = () => {
                         onClick={
                             handleEdit
                         }
+                        disabled={deleting}
                     >
                         Edit
                     </button>
@@ -218,13 +236,18 @@ const PrescriptionDetails = () => {
                 </div>
             )}
 
-            <section className="prescription-summary">
+            <section
+                className="prescription-summary"
+                aria-labelledby="prescription-information-heading"
+            >
 
                 <div className="card">
 
                     <div className="card-header">
 
-                        <h2>Prescription Information</h2>
+                        <h2 id="prescription-information-heading">
+                            Prescription Information
+                        </h2>
                         <PrescriptionStatus
                             status={
                                 prescription.status
@@ -241,7 +264,7 @@ const PrescriptionDetails = () => {
                                 <label>Prescription No</label>
                                 <p>
                                     {
-                                        prescription.prescription_no
+                                        {prescription.prescription_no || "—"}
                                     }
                                 </p>
                             </div>
@@ -250,7 +273,7 @@ const PrescriptionDetails = () => {
                                 <label>Date</label>
                                 <p>
                                     {
-                                        prescription.date
+                                        {prescription.date || "—"}
                                     }
                                 </p>
                             </div>
@@ -259,7 +282,7 @@ const PrescriptionDetails = () => {
                                 <label>Doctor</label>
                                 <p>
                                     {
-                                        prescription.doctor_name
+                                        {prescription.doctor_name || "—"}
                                     }
                                 </p>
                             </div>
@@ -268,7 +291,7 @@ const PrescriptionDetails = () => {
                                 <label>Patient</label>
                                 <p>
                                     {
-                                        prescription.patient_name
+                                        {prescription.patient_name || "—"}
                                     }
                                 </p>
                             </div>

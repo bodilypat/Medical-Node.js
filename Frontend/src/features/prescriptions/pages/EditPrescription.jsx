@@ -2,6 +2,7 @@
 /* File: src/features/prescriptions/pages/EditPrescription.jsx */
 /* *********************************************************** */
 
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -15,6 +16,7 @@ import {
 const EditPrescription = () => {
 
     const navigate = useNavigate();
+    const [submitError, setSubmitError] = useState(null);
     const {
         prescriptionId,
     } = useParams();
@@ -36,6 +38,8 @@ const EditPrescription = () => {
     const handleSubmit = async (
         formData
     ) => {
+        setSubmitError(null);
+
         try {
             await editPrescription(
                 formData
@@ -48,6 +52,10 @@ const EditPrescription = () => {
                 }
             );
         } catch (error) {
+            setSubmitError(
+                error.message ??
+                "Unable to update prescription. Please try again."
+            );
             console.error(
                 "Failed to update prescription:",
                 error
@@ -150,6 +158,17 @@ const EditPrescription = () => {
             </header>
 
             <section className="page-content">
+                {
+                    submitError && (
+                        <div
+                            className="error-state"
+                            role="alert"
+                        >
+                            {submitError}
+                        </div>
+                    )
+                }
+
                 <PrescriptionForm
                     prescription={
                         prescription

@@ -43,6 +43,7 @@ const Prescriptions = () => {
 
     const [isModalOpen, setIsModalOpen] =
         useState(false);
+    const [actionError, setActionError] = useState("");
 
     /**
      * Filter prescriptions
@@ -107,6 +108,7 @@ const Prescriptions = () => {
      * Open create dialog
      */
     const handleCreate = () => {
+        setActionError("");
         setSelectedPrescription(null);
         setIsModalOpen(true);
     };
@@ -117,6 +119,7 @@ const Prescriptions = () => {
     const handleEdit = (
         prescription
     ) => {
+        setActionError("");
         setSelectedPrescription(
             prescription
         );
@@ -146,6 +149,9 @@ const Prescriptions = () => {
                 prescription.id
             );
         } catch (error) {
+            setActionError(
+                error?.message ?? "Unable to delete prescription. Please try again."
+            );
             console.error(
                 "Failed to delete prescription:",
                 error
@@ -171,8 +177,12 @@ const Prescriptions = () => {
                 );
             }
 
+            setActionError("");
             setIsModalOpen(false);
         } catch (error) {
+            setActionError(
+                error?.message ?? "Unable to save prescription. Please check the details and try again."
+            );
             console.error(
                 "Failed to save prescription:",
                 error
@@ -184,6 +194,7 @@ const Prescriptions = () => {
      * Close modal
      */
     const handleClose = () => {
+        setActionError("");
         setSelectedPrescription(null);
         setIsModalOpen(false);
     };
@@ -194,10 +205,7 @@ const Prescriptions = () => {
             <header className="page-header">
 
                 <div>
-                    <h1>
-                        Prescriptions
-                    </h1>
-
+                    <h1>Prescriptions</h1>
                     <p>
                         Manage patient
                         prescriptions.
@@ -214,6 +222,15 @@ const Prescriptions = () => {
                 </button>
 
             </header>
+
+            {actionError && (
+                <div className="error-state" role="alert">
+                    <p>{actionError}</p>
+                    <button type="button" onClick={() => setActionError("")}>
+                        Dismiss
+                    </button>
+                </div>
+            )}
 
             <section className="page-toolbar">
 
