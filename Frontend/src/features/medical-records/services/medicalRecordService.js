@@ -4,114 +4,63 @@
 
 import api from "../../../services/api";
 
+const getData = (request) => request.then(({ data }) => data);
+
 const medicalRecordService = {
-  getAll: async (params = {}) => {
-    const response = await api.get("/medical-records", {
-      params,
-    });
-
-    return response.data;
+  getAll: (params = {}) => {
+    return getData(api.get("/medical-records", { params }));
   },
 
-  getById: async (recordId) => {
-    const response = await api.get(
-      `/medical-records/${recordId}`
-    );
-
-    return response.data;
+  getById: (recordId) => {
+    return getData(api.get(`/medical-records/${recordId}`));
   },
 
-  create: async (data) => {
-    const response = await api.post(
-      "/medical-records",
-      data
-    );
-
-    return response.data;
+  create: (data) => {
+    return getData(api.post("/medical-records", data));
   },
 
-  update: async (recordId, data) => {
-    const response = await api.put(
-      `/medical-records/${recordId}`,
-      data
-    );
-
-    return response.data;
+  update: (recordId, data) => {
+    return getData(api.put(`/medical-records/${recordId}`, data));
   },
 
-  delete: async (recordId) => {
-    const response = await api.delete(
-      `/medical-records/${recordId}`
-    );
-
-    return response.data;
+  delete: (recordId) => {
+    return getData(api.delete(`/medical-records/${recordId}`));
   },
 
-  archive: async (recordId) => {
-    const response = await api.patch(
-      `/medical-records/${recordId}/archive`
-    );
-
-    return response.data;
+  archive: (recordId) => {
+    return getData(api.patch(`/medical-records/${recordId}/archive`));
   },
 
-  restore: async (recordId) => {
-    const response = await api.patch(
-      `/medical-records/${recordId}/restore`
-    );
-
-    return response.data;
+  restore: (recordId) => {
+    return getData(api.patch(`/medical-records/${recordId}/restore`));
   },
 
-  addDiagnosis: async (recordId, data) => {
-    const response = await api.post(
-      `/medical-records/${recordId}/diagnoses`,
-      data
-    );
-
-    return response.data;
+  addDiagnosis: (recordId, data) => {
+    return getData(api.post(`/medical-records/${recordId}/diagnoses`, data));
   },
 
-  updateDiagnosis: async (
-    recordId,
-    diagnosisId,
-    data
-  ) => {
-    const response = await api.put(
-      `/medical-records/${recordId}/diagnoses/${diagnosisId}`,
-      data
+  updateDiagnosis: (recordId, diagnosisId, data) => {
+    return getData(
+      api.put(`/medical-records/${recordId}/diagnoses/${diagnosisId}`, data)
     );
-
-    return response.data;
   },
 
-  deleteDiagnosis: async (
-    recordId,
-    diagnosisId
-  ) => {
-    const response = await api.delete(
-      `/medical-records/${recordId}/diagnoses/${diagnosisId}`
+  deleteDiagnosis: (recordId, diagnosisId) => {
+    return getData(
+      api.delete(`/medical-records/${recordId}/diagnoses/${diagnosisId}`)
     );
-
-    return response.data;
   },
 
-  addClinicalNote: async (recordId, data) => {
-    const response = await api.post(
-      `/medical-records/${recordId}/clinical-notes`,
-      data
+  addClinicalNote: (recordId, data) => {
+    return getData(
+      api.post(`/medical-records/${recordId}/clinical-notes`, data)
     );
-
-    return response.data;
   },
 
-  addTreatmentPlan: async (recordId, data) => {
-    const response = await api.post(
-      `/medical-records/${recordId}/treatment-plans`,
-      data
+  addTreatmentPlan: (recordId, data) => {
+    return getData(
+      api.post(`/medical-records/${recordId}/treatment-plans`, data)
     );
-
-    return response.data;
   },
 };
 
