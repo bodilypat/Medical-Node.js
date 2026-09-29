@@ -77,7 +77,7 @@ export const DIAGNOSIS_TYPE_OPTIONS = [
 
 export const MEDICAL_RECORD_PAGE_SIZE = 10;
 
-export const DEFAULT_MEDICAL_RECORD_FILTERS = {
+export const createDefaultMedicalRecordFilters = () => ({
   search: "",
   patientId: "",
   doctorId: "",
@@ -85,4 +85,7 @@ export const DEFAULT_MEDICAL_RECORD_FILTERS = {
   status: "",
   dateFrom: "",
   dateTo: "",
-};
+});
+
+export const DEFAULT_MEDICAL_RECORD_FILTERS =
+  createDefaultMedicalRecordFilters();
