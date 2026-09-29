@@ -223,8 +223,9 @@ const mapRefundToForm = (
       "",
 
     notes:
-      refund.notes ||
-      "",
+      refund.notes == null
+        ? ""
+        : String(refund.notes),
   };
 };
 
@@ -413,9 +414,9 @@ const RefundForm = ({
     const validationErrors =
       {};
 
-    if (!payment) {
+    if (!payment || !getPaymentId(payment)) {
       validationErrors.payment =
-        "Payment information is required.";
+        "A valid payment is required to process a refund.";
     }
 
     if (
@@ -456,6 +457,11 @@ const RefundForm = ({
           currency
         )}.`;
       }
+    } else if (
+      formData.refundType !== "full"
+    ) {
+      validationErrors.refundType =
+        "Please select a valid refund type.";
     }
 
     if (
@@ -495,6 +501,10 @@ const RefundForm = ({
   const handleSubmit =
     async (event) => {
       event.preventDefault();
+
+      if (loading) {
+        return;
+      }
 
       setSubmitError("");
 

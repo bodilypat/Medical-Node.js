@@ -279,43 +279,55 @@ const BillingTable = ({
         direction: "desc",
     });
 
+    const normalizeSelectionId = (value) =>
+        value === null || value === undefined
+            ? ""
+            : String(value);
+
+    const isSameSelectionId = (left, right) =>
+        normalizeSelectionId(left) === normalizeSelectionId(right);
+
   /* Selection */
 
-const controlledSelection =
+  const isControlledSelection =
+    selectedIds !== undefined &&
     Array.isArray(selectedIds);
 
- const activeSelectedIds =
-    controlledSelection
+  const activeSelectedIds =
+    isControlledSelection
       ? selectedIds
       : internalSelectedIds;
 
- const updateSelection = (
+  const updateSelection = (
     nextSelection
   ) => {
     if (onSelectionChange) {
       onSelectionChange(
         nextSelection
       );
-    } else {
-      setInternalSelectedIds(
-        nextSelection
-      );
+      return;
     }
+
+    setInternalSelectedIds(
+      nextSelection
+    );
   };
 
-const isSelected = (billing) => {
+  const isSelected = (billing) => {
     const id = getBillingId(
       billing
     );
 
     return activeSelectedIds.some(
       (selectedId) =>
-        String(selectedId) ===
-        String(id)
+        isSameSelectionId(
+          selectedId,
+          id
+        )
     );
-};
+  };
 
-const handleSelectRow = (
+  const handleSelectRow = (
     billing
   ) => {
     const id = getBillingId(
@@ -330,8 +342,10 @@ const handleSelectRow = (
       isSelected(billing)
         ? activeSelectedIds.filter(
             (selectedId) =>
-              String(selectedId) !==
-              String(id)
+              !isSameSelectionId(
+                selectedId,
+                id
+              )
           )
         : [
             ...activeSelectedIds,
@@ -341,7 +355,7 @@ const handleSelectRow = (
     updateSelection(
       nextSelection
     );
-};
+  };
 
   
   /* Sorting */

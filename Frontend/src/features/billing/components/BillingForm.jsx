@@ -372,11 +372,11 @@ const totals = useMemo(() => {
 const clearFieldError = (
     field
 ) => {
-    if (!errors[field]) {
-        return;
-    }
-
     setErrors((previous) => {
+        if (!previous[field]) {
+            return previous;
+        }
+
         const next = {
         ...previous,
     };
@@ -467,6 +467,16 @@ const handleAddItem = () => {
         ],
       })
     );
+
+    setErrors((previous) => {
+        if (!previous.items) {
+            return previous;
+        }
+
+        const next = { ...previous };
+        delete next.items;
+        return next;
+    });
   };
 
   const handleRemoveItem = (
@@ -497,15 +507,21 @@ const handleAddItem = () => {
 
         delete next.items;
 
-        Object.keys(next).forEach(
-            (key) => {
-                if (
-                    key.startsWith(`items.${index}.`)
-                ) {
-                    delete next[key];
-                }
+        Object.keys(next).forEach((key) => {
+            const match = key.match(/^items\.(\d+)\.(.+)$/);
+
+            if (!match) {
+                return;
             }
-        );
+
+            const itemIndex = Number(match[1]);
+            if (itemIndex === index) {
+                delete next[key];
+            } else if (itemIndex > index) {
+                next[`items.${itemIndex - 1}.${match[2]}`] = next[key];
+                delete next[key];
+            }
+        });
 
         return next;
         });
@@ -598,7 +614,7 @@ const handleAddItem = () => {
         }
     );
 
-    if (formData.notes.length > MAX_NOTES_LENGTH) {
+    if (String(formData.notes || "").length > MAX_NOTES_LENGTH) {
         validationErrors.notes = `Notes cannot exceed ${MAX_NOTES_LENGTH} characters.`;
     }
 
@@ -645,7 +661,7 @@ const handleSubmit = async (
             formData.paymentTerms,
 
         notes:
-            formData.notes.trim(),
+            String(formData.notes || "").trim(),
 
         items: formData.items.map(
             (item) => ({

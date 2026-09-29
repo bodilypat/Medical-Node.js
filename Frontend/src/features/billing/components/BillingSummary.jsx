@@ -17,37 +17,45 @@ const summaryItems = [
         label: "Total Invoices",
         icon: FileText,
         color: "blue",
-        format: (value) => value,
+        format: (value) => Number(value || 0).toLocaleString(),
     },
     {
         key: "totalAmount",
         label: "Total Amount",
         icon: CircleDollarSign,
         color: "indigo",
-        format: (value) => `$${Number(value || 0).toFixed(2)}`,
+        format: formatCurrency,
     },
     {
         key: "paidAmount",
         label: "Paid Amount",
         icon: CheckCircle2,
         color: "green",
-        format: (value) => `$${Number(value || 0).toFixed(2)}`,
+        format: formatCurrency,
     },
     {
         key: "outstandingAmount",
         label: "Outstanding",
         icon: Clock3,
         color: "orange",
-        format: (value) => `$${Number(value || 0).toFixed(2)}`,
+        format: formatCurrency,
     },
     {
         key: "refundedAmount",
         label: "Refunded",
         icon: RotateCcw,
         color: "red",
-        format: (value) => `$${Number(value || 0).toFixed(2)}`,
+        format: formatCurrency,
     },
 ];
+
+function formatCurrency(value) {
+    const amount = Number(value);
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+    }).format(Number.isFinite(amount) ? amount : 0);
+}
 
 const colorClasses = {
     blue: {
@@ -70,22 +78,27 @@ const colorClasses = {
 function BillingSummary({ data = {}, loading = false }) {
     if (loading) {
         return (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div
+                aria-label="Loading billing summary"
+                aria-busy="true"
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+            >
                 {summaryItems.map((item) => (
-                <div
-                    key={item.key}
-                    className="animate-pulse rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-                >
-                    <div className="flex items-center justify-between">
-                        <div className="h-10 w-10 rounded-lg bg-gray-200" />
-                        <div className="h-4 w-16 rounded bg-gray-200" />
-                    </div>
+                    <div
+                        key={item.key}
+                        aria-hidden="true"
+                        className="animate-pulse rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="h-10 w-10 rounded-lg bg-gray-200" />
+                            <div className="h-4 w-16 rounded bg-gray-200" />
+                        </div>
 
-                    <div className="mt-4 h-7 w-24 rounded bg-gray-200" />
-                    <div className="mt-2 h-4 w-28 rounded bg-gray-200" />
-                </div>
-            ))}
-        </div>
+                        <div className="mt-4 h-7 w-24 rounded bg-gray-200" />
+                        <div className="mt-2 h-4 w-28 rounded bg-gray-200" />
+                    </div>
+                ))}
+            </div>
         );
     }
 

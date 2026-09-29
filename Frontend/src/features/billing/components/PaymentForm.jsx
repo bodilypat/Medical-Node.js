@@ -71,6 +71,18 @@ const getToday = () => {
     return `${year}-${month}-${day}`;
 };
 
+  const toDateInputValue = (value) => {
+    if (!value) {
+      return getToday();
+    }
+
+    const stringValue = String(value);
+
+    return stringValue.length >= 10
+      ? stringValue.slice(0, 10)
+      : getToday();
+  };
+
 const getInvoiceId = (
     invoice
 ) => {
@@ -237,10 +249,11 @@ const mapPaymentToForm = (
         "cash",
 
         paymentDate:
-        payment.paymentDate ??
-        payment.date ??
-        payment.createdAt ??
-        getToday(),
+        toDateInputValue(
+          payment.paymentDate ??
+          payment.date ??
+          payment.createdAt
+        ),
 
         referenceNumber:
         payment.referenceNumber ??
@@ -248,8 +261,7 @@ const mapPaymentToForm = (
         "",
 
         notes:
-        payment.notes ??
-        "",
+        String(payment.notes ?? ""),
     };
 };
 
@@ -450,6 +462,14 @@ const handleInvoiceChange = (
     const validationErrors =
       {};
 
+    const referenceNumber = String(
+      formData.referenceNumber ?? ""
+    );
+
+    const notes = String(
+      formData.notes ?? ""
+    );
+
     if (
       !formData.invoiceId
     ) {
@@ -500,19 +520,12 @@ const handleInvoiceChange = (
         "Please select a payment date.";
     }
 
-    if (
-      formData.referenceNumber
-        .length >
-      MAX_REFERENCE_LENGTH
-    ) {
+    if (referenceNumber.length > MAX_REFERENCE_LENGTH) {
       validationErrors.referenceNumber =
         `Reference number cannot exceed ${MAX_REFERENCE_LENGTH} characters.`;
     }
 
-    if (
-      formData.notes.length >
-      MAX_NOTES_LENGTH
-    ) {
+    if (notes.length > MAX_NOTES_LENGTH) {
       validationErrors.notes =
         `Notes cannot exceed ${MAX_NOTES_LENGTH} characters.`;
     }
@@ -557,10 +570,10 @@ const handleInvoiceChange = (
         formData.paymentDate,
 
       referenceNumber:
-        formData.referenceNumber.trim(),
+        String(formData.referenceNumber ?? "").trim(),
 
       notes:
-        formData.notes.trim(),
+        String(formData.notes ?? "").trim(),
     };
 
     try {
