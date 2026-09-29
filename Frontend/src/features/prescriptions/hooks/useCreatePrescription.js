@@ -13,13 +13,28 @@ const createMedicine = (medicine = {}) => ({
 	...medicine,
 });
 
+const normalizeMedicines = (medicines) =>
+	(Array.isArray(medicines) ? medicines : []).map(createMedicine);
+
 /**
  * Keeps prescription medicines in one place and exposes safe immutable updates.
  */
 export default function usePrescriptionMedicine(initialMedicines = []) {
 	const [medicines, setMedicines] = useState(() =>
-		initialMedicines.map(createMedicine),
+		normalizeMedicines(initialMedicines),
 	);
+
+	const replaceMedicines = useCallback((nextMedicines) => {
+		setMedicines(normalizeMedicines(nextMedicines));
+	}, []);
+
+	const resetMedicines = useCallback(() => {
+		setMedicines(normalizeMedicines(initialMedicines));
+	}, [initialMedicines]);
+
+	const clearMedicines = useCallback(() => {
+		setMedicines([]);
+	}, []);
 
 	const addMedicine = useCallback((medicine = {}) => {
 		const newMedicine = createMedicine(medicine);
@@ -35,7 +50,12 @@ export default function usePrescriptionMedicine(initialMedicines = []) {
 		setMedicines((current) =>
 			current.map((medicine) =>
 				medicine.id === id
-					? { ...medicine, ...(typeof changes === 'function' ? changes(medicine) : changes) }
+					? {
+							...medicine,
+							...(typeof changes === 'function'
+								? changes(medicine)
+								: changes),
+						}
 					: medicine,
 			),
 		);
@@ -59,6 +79,9 @@ export default function usePrescriptionMedicine(initialMedicines = []) {
 	return {
 		medicines,
 		setMedicines,
+		replaceMedicines,
+		resetMedicines,
+		clearMedicines,
 		addMedicine,
 		removeMedicine,
 		updateMedicine,

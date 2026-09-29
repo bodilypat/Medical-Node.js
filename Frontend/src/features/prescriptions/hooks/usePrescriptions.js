@@ -54,9 +54,9 @@ const usePrescriptions = () => {
     /* ---------------------------------- */
     const getPrescription = useCallback(
         async (id) => {
-            return await prescriptionService.getById(
-                id
-            );
+            if (!id) throw new Error("Prescription ID is required.");
+            const response = await prescriptionService.getById(id);
+            return unwrapResponse(response);
         },
         []
     );
@@ -113,12 +113,12 @@ const usePrescriptions = () => {
                 const updatedId = prescriptionId(updated) ?? id;
                 setPrescriptions((previous) => {
                     const exists = previous.some(
-                        (item) => prescriptionId(item) === id
+                        (item) => String(prescriptionId(item)) === String(id)
                     );
                     return exists
                         ? previous.map((item) =>
-                            prescriptionId(item) === id ||
-                            prescriptionId(item) === updatedId
+                            String(prescriptionId(item)) === String(id) ||
+                            String(prescriptionId(item)) === String(updatedId)
                                 ? updated
                                 : item
                         )
@@ -140,6 +140,7 @@ const usePrescriptions = () => {
     /* ---------------------------------- */
     const removePrescription = useCallback(
         async (id) => {
+            if (!id) throw new Error("Prescription ID is required.");
             setLoading(true);
             setError(null);
             try {
@@ -149,7 +150,7 @@ const usePrescriptions = () => {
                 setPrescriptions((previous) =>
                     previous.filter(
                         (item) =>
-                            prescriptionId(item) !== id
+                            String(prescriptionId(item)) !== String(id)
                     )
                 );
             } catch (err) {
