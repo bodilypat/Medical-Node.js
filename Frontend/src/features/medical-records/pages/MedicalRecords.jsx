@@ -17,10 +17,9 @@ import {
 const MedicalRecords = () => {
   const navigate = useNavigate();
 
-  const [filters, setFilters] =
-    useState(
-      DEFAULT_MEDICAL_RECORD_FILTERS
-    );
+  const [filters, setFilters] = useState(() => ({
+    ...DEFAULT_MEDICAL_RECORD_FILTERS,
+  }));
 
   const params = useMemo(
     () => ({
@@ -37,9 +36,9 @@ const MedicalRecords = () => {
   } = useMedicalRecords(params);
 
   const resetFilters = () => {
-    setFilters(
-      DEFAULT_MEDICAL_RECORD_FILTERS
-    );
+    setFilters({
+      ...DEFAULT_MEDICAL_RECORD_FILTERS,
+    });
   };
 
   const handleView = (record) => {
@@ -49,9 +48,12 @@ const MedicalRecords = () => {
   };
 
   return (
-    <section className="medical-records-page">
+    <section
+      className="medical-records-page"
+      aria-labelledby="medical-records-title"
+    >
       <header>
-        <h1>Medical Records</h1>
+        <h1 id="medical-records-title">Medical Records</h1>
 
         <p>
           Manage patient medical records and
@@ -60,6 +62,7 @@ const MedicalRecords = () => {
 
         <button
           type="button"
+          className="create-medical-record-button"
           onClick={() =>
             navigate(
               "/medical-records/create"
@@ -77,14 +80,15 @@ const MedicalRecords = () => {
       />
 
       {error && (
-        <div className="error-state">
+        <div className="error-state" role="alert">
           <p>{error}</p>
 
           <button
             type="button"
             onClick={refetch}
+            disabled={loading}
           >
-            Try Again
+            {loading ? "Retrying…" : "Try Again"}
           </button>
         </div>
       )}

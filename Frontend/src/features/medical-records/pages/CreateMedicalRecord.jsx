@@ -17,16 +17,15 @@ const CreateMedicalRecord = () => {
   } = useCreateMedicalRecord();
 
   const handleSubmit = async (data) => {
+    if (loading) return;
+
     try {
-      const result =
-        await createMedicalRecord(data);
+      const result = await createMedicalRecord(data);
+      const record = result?.data?.record ?? result?.data ?? result;
+      const recordId = record?.id ?? record?._id;
 
-      const record = result?.data ?? result;
-
-      if (record?.id) {
-        navigate(
-          `/medical-records/${record.id}`
-        );
+      if (recordId) {
+        navigate(`/medical-records/${recordId}`);
       } else {
         navigate("/medical-records");
       }
@@ -36,18 +35,17 @@ const CreateMedicalRecord = () => {
   };
 
   return (
-    <section className="create-medical-record-page">
+    <main className="create-medical-record-page">
       <header>
         <h1>Create Medical Record</h1>
 
-        <p>
-          Create a new clinical record for a
-          patient.
+        <p id="create-medical-record-description">
+          Create a new clinical record for a patient.
         </p>
       </header>
 
       {error && (
-        <div className="error-state">
+        <div className="error-state" role="alert" aria-live="assertive">
           {error}
         </div>
       )}
@@ -55,8 +53,9 @@ const CreateMedicalRecord = () => {
       <MedicalRecordForm
         onSubmit={handleSubmit}
         loading={loading}
+        aria-describedby="create-medical-record-description"
       />
-    </section>
+    </main>
   );
 };
 

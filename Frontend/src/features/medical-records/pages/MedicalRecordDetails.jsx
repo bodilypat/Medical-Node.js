@@ -44,6 +44,10 @@ const MedicalRecordDetailsPage = () => {
   };
 
   const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete this medical record?")) {
+      return;
+    }
+
     await deleteRecord(id);
     navigate("/medical-records");
   };
@@ -99,7 +103,7 @@ const MedicalRecordDetailsPage = () => {
       />
 
       {actionError && (
-        <p className="error-message">
+        <p className="error-message" role="alert">
           {actionError}
         </p>
       )}
